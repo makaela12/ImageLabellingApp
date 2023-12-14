@@ -1,0 +1,56 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backdrop"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="170dp"
+        android:layout_height="200dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="60dp"
+        app:srcCompat="@drawable/logo" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageView"
+        android:layout_marginTop="1dp"
+        android:fontFamily="@font/bahianita"
+        android:text="LABELME+"
+        android:textAlignment="center"
+        android:textSize="40sp" />
+
+    <Button
+        android:id="@+id/newProject"
+        android:layout_width="300dp"
+        android:layout_height="65dp"
+        android:layout_below="@+id/title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="#E1E0E2"
+        android:capitalize="words"
+        android:fontFamily="sans-serif"
+        android:text="           New Project           "
+        android:textAllCaps="false"
+        android:textColor="#464646" />
+
+    <Button
+        android:id="@+id/oldProject"
+        android:layout_width="300dp"
+        android:layout_height="65dp"
+        android:layout_below="@+id/newProject"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="#E1E0E2"
+        android:fontFamily="sans-serif"
+        android:text="Choose Existing Project"
+        android:textAllCaps="false"
+        android:textColor="#464646" />
+
+
+</RelativeLayout>
