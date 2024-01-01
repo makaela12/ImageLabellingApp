@@ -1,15 +1,13 @@
 package com.example.imagelabellingapp;
 
-import static com.example.imagelabellingapp.ImageUtils.getBitmapFromUri;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Bitmap;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
 
