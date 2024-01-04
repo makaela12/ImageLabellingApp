@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
@@ -25,6 +26,8 @@ import androidx.core.graphics.drawable.DrawableCompat;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class EditProjectActivity extends AppCompatActivity {
 
@@ -62,7 +65,7 @@ public class EditProjectActivity extends AppCompatActivity {
             }
         });
         // Change the color of the back arrow
-        changeBackArrowColor(toolbar, R.color.white);
+        changeExitIconColour(toolbar, R.color.white);
 
         dbHelper = new DBHelper(this);
 
@@ -126,27 +129,28 @@ public class EditProjectActivity extends AppCompatActivity {
         labelList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int item, long l) {
-                final String selectedLabel = labelArr.get(item);
+              //  if (!labelArr.isEmpty() && item < labelArr.size()) {
+                    final String selectedLabel = labelArr.get(item);
 
-                // Creating options for the user
-                CharSequence[] options = {"Edit", "Delete"};
+                    // Creating options for the user
+                    CharSequence[] options = {"Edit", "Delete"};
 
-                new AlertDialog.Builder(EditProjectActivity.this)
-                        .setTitle("Select an option for " + selectedLabel)
-                        .setItems(options, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0: // Edit
-                                        showEditLabelDialog(selectedLabel, item);
-                                        break;
-                                    case 1: // Delete
-                                        removeLabel(item);
-                                        break;
+                    new AlertDialog.Builder(EditProjectActivity.this)
+                            .setTitle("Select an option for " + selectedLabel)
+                            .setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    switch (which) {
+                                        case 0: // Edit
+                                            showEditLabelDialog(selectedLabel, item);
+                                            break;
+                                        case 1: // Delete
+                                            removeLabel(item);
+                                            break;
+                                    }
                                 }
-                            }
-                        }).create().show();
-
+                            }).create().show();
+              //  }
                 return false;
             }
         });
@@ -160,33 +164,41 @@ public class EditProjectActivity extends AppCompatActivity {
                 if (!projectName.isEmpty()) {
                     // Update the project name in the database
                     dbHelper.updateProject(projectId, projectName);
+                    //long projectId = insertProject(projectName);
 
                     // Process labels (Add new labels to the project)
                     for (String labelName : labelArr) {
-                        insertLabel(projectId, labelName);
+                        //insertLabel(projectId, labelName);
+                        dbHelper.insertLabel(projectId, labelName);
                     }
                     // Clear labelArr after updating labels in the database
                     labelArr.clear();
                     adapter.notifyDataSetChanged();
 
-                    Intent intent = new Intent(EditProjectActivity.this, MainActivity2.class);
-                    intent.putExtra("projectId", projectId);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
+                    //Broadcast a message indicating that the data has changed
+                    Intent dataChangedIntent = new Intent("data_changed");
+                    sendBroadcast(dataChangedIntent);
 
                     finish();
+
+                   // Intent intent = new Intent(EditProjectActivity.this, MainActivity2.class);
+                   // intent.putExtra("projectId", projectId);
+                   //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    //startActivity(intent);
+
+                    //finish();
                 }
             }
         });
 
     }
 
-    // method to call the tintDrawable method to change the color of the back arrow to white
-    private void changeBackArrowColor(Toolbar toolbar, int colorRes) {
+    // method to call the tintDrawable method to change the color of the 'x' icon to white
+    private void changeExitIconColour(Toolbar toolbar, int colorRes) {
         // Get the up button drawable
         Drawable upArrow = ContextCompat.getDrawable(this, android.R.drawable.ic_menu_close_clear_cancel);
 
-        // Tint the drawable
+        // tint the drawable
         if (upArrow != null) {
             upArrow = tintDrawable(upArrow, colorRes);
             getSupportActionBar().setHomeAsUpIndicator(upArrow);
@@ -200,25 +212,77 @@ public class EditProjectActivity extends AppCompatActivity {
         return wrappedDrawable;
     }
 
-    // Helper method to load project details for editing
+    // helper method to load project details for editing
     private void loadProjectDetails(long projectId) {
-        // Retrieve project details from the database using dbHelper
+        // retrieve project details from the database using dbHelper
         String projectName = dbHelper.getProjectName(projectId);
         ArrayList<String> labels = (ArrayList<String>) dbHelper.getLabelsForProject(projectId);
 
-        // Set project name and labels to the views
+        // set project name and labels to the views
         projName.setText(projectName);
+        Log.d("EditProjectActivity", "Loaded project details. ProjectName: " + projectName);
+        if (labels != null) {
+            Log.d("EditProjectActivity", "Loaded project details. Labels: " + labels.toString());
+        } else {
+            Log.e("EditProjectActivity", "Loaded project details. Labels is null.");
+        }
         adapter.clear();
-        adapter.addAll(labels);
+        labelArr.clear();
+
+        Set<String> uniqueLabels = new HashSet<>(labels);
+        for (String label : uniqueLabels) {
+            adapter.add(label);
+            labelArr.add(label);
+        }
+        Log.d("EditProjectActivity", "Loaded project details. New labelArr: " + labelArr.toString());
     }
 
-    // Method to remove a label
     private void removeLabel(int position) {
-        labelArr.remove(position);
-        adapter.notifyDataSetChanged();
+        final String selectedLabel = labelArr.get(position);
+        // Check if the label is associated with images in the database
+        int imageCount = dbHelper.getImageCountForLabel(projectId, selectedLabel);
+
+        if (imageCount > 0) {
+            // If there are associated images, show a warning dialog
+            showDeleteLabelWithImagesDialog(selectedLabel, position, imageCount);
+        }
+        else{
+            dbHelper.deleteLabelAndImages(projectId, selectedLabel);
+            // Remove the label from the listview
+            labelArr.remove(position);
+            adapter.notifyDataSetChanged();
+        }
+
     }
 
-    // Method to show a dialog for editing a label
+    // Helper method to show a warning dialog if label is associated with images
+    private void showDeleteLabelWithImagesDialog(final String label, final int position, int imageCount) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Warning: Label associated with images");
+        builder.setMessage("This label is associated with " + imageCount + " image(s). Deleting it will result in the loss of these images.");
+
+        builder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Remove the label from the listview and database
+                dbHelper.deleteLabelAndImages(projectId, label);
+                labelArr.remove(position);
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Cancel button clicked, do nothing
+                dialog.dismiss();
+            }
+        });
+
+        builder.show();
+    }
+
+    // method to show a dialog for editing a label
     private void showEditLabelDialog(final String label, final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Edit Label");

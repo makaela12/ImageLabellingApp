@@ -6,13 +6,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 
@@ -34,6 +39,25 @@ public class selectProject extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_project);
+        // Initialize the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back arrow)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // Set the click listener for the back arrow
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Handle the back arrow click
+                onBackPressed();
+            }
+        });
+        changeBackArrowColor(toolbar, R.color.white);
+
+
         dbHelper = new DBHelper(this);
         projectListView = findViewById(R.id.projectListView);
 
@@ -151,6 +175,17 @@ public class selectProject extends AppCompatActivity {
         projectAdapter.clear();
         projectAdapter.addAll(projectList);
         projectAdapter.notifyDataSetChanged();
+    }
+
+    private void changeBackArrowColor(Toolbar toolbar, int colorRes) {
+        // Get the up button drawable (system default back arrow)
+        final Drawable upArrow = toolbar.getNavigationIcon();
+
+        // Tint the drawable
+        if (upArrow != null) {
+            upArrow.setColorFilter(ContextCompat.getColor(this, colorRes), PorterDuff.Mode.SRC_ATOP);
+            getSupportActionBar().setHomeAsUpIndicator(upArrow);
+        }
     }
 
 }

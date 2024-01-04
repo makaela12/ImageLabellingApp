@@ -111,29 +111,16 @@ public class ImageDetailsActivity extends AppCompatActivity {
     }
 
     private void saveImageDetails() {
-        // TODO: Implement logic to save image details (e.g., selected label) to the database.
-
-        // Retrieve imageId from the intent
-        //long imageId = getIntent().getLongExtra("imageId", -1);
         // Get selected label from the spinner
         selectedLabel = labelSpinner.getSelectedItem().toString();
         Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
-        //if (imagePath.startsWith("file://")) {
-        //    imagePath = imagePath.substring(6);
-        // }
-        //dbHelper.saveImageDetails(imagePath, projectId, selectedLabel);
-        // Save image details to the database using dbHelper
-        //dbHelper.saveImageDetails(imagePath, projectId, selectedLabel);
         dbHelper.updateLabelForImage(imageId, selectedLabel);
 
-        // Send broadcast to notify MainActivity2 about the new image
-        // Intent intent = new Intent("new_image_saved");
         // Prepare the result intent
         Intent resultIntent = new Intent();
         resultIntent.putExtra("selectedLabel", selectedLabel);
         // Include the imageId in the result intent
         resultIntent.putExtra("imageId", imageId);
-        //sendBroadcast(resultIntent);
 
         // Finish the activity and return to MainActivity2
         setResult(RESULT_OK, resultIntent);

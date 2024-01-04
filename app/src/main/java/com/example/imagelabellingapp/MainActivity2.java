@@ -128,6 +128,7 @@ public class MainActivity2 extends AppCompatActivity {
                         Intent editProjectIntent = new Intent(MainActivity2.this, EditProjectActivity.class);
                         editProjectIntent.putExtra("projectId", projectId);
                         startActivity(editProjectIntent);
+                        //startActivityForResult(editProjectIntent, REQUEST_CODE);
                     } else {
                         Log.e("MainActivity2", "Invalid projectId: " + projectId);
                     }
@@ -208,6 +209,7 @@ public class MainActivity2 extends AppCompatActivity {
             }
         }
         Uri resultUri = null;
+
 
         // if the user wants to select an image from their photo gallery
         if (requestCode == 10 && resultCode == RESULT_OK) {
@@ -328,6 +330,8 @@ public class MainActivity2 extends AppCompatActivity {
                 imageAdapter = new ImageAdapter(this, R.layout.image_list_item, updatedImagePaths, dbHelper);
                 imageListView.setAdapter(imageAdapter);
             } else {
+                // Clear the existing data in the adapter
+                imageAdapter.clear();
                 // Add all the new image paths
                 imageAdapter.addAll(updatedImagePaths);
             }
@@ -395,6 +399,7 @@ public class MainActivity2 extends AppCompatActivity {
             case android.R.id.home:
                 // Handle the back button click (navigate up)
                 onBackPressed();
+                navigateToSelectProject();
                 return true;
             // Add other menu item cases if needed
             default:
@@ -408,11 +413,29 @@ public class MainActivity2 extends AppCompatActivity {
         super.onResume();
         // Refresh the project list in selectProject activity
         refreshProjectListInSelectProject();
+        // Register a BroadcastReceiver to listen for data changes
+        IntentFilter intentFilter = new IntentFilter("data_changed");
+        BroadcastReceiver dataChangedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // Update the ListView when data changes
+                updateListView();
+            }
+        };
+        registerReceiver(dataChangedReceiver, intentFilter);
     }
 
     private void refreshProjectListInSelectProject() {
         // Send a broadcast to notify selectProject activity to refresh the project list
         sendBroadcast(new Intent("refresh_project_list"));
+    }
+
+    private void navigateToSelectProject() {
+        // Navigate to the selectProject activity
+        Intent intent = new Intent(MainActivity2.this, selectProject.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
     }
 
 

@@ -143,6 +143,8 @@ public class createProject extends AppCompatActivity {
                         intent.putExtra("projectId", projectId);
                         startActivity(intent);
 
+                        finish();
+
 
                     }else {
                         // Log the project insertion failure

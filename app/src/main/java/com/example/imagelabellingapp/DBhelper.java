@@ -119,6 +119,7 @@ class DBHelper extends SQLiteOpenHelper {
 
     }
     // used to insert a new label for a project
+    /*
     public void insertLabel(long projectId, String labelName) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -127,7 +128,7 @@ class DBHelper extends SQLiteOpenHelper {
 
         db.insert(TABLE_LABELS, null, values);
         db.close();
-    }
+    }*/
 
     // used to delete labels associated to a project_id the user wants to delete
     public void deleteLabelsForProject(long projectId) {
@@ -273,10 +274,107 @@ class DBHelper extends SQLiteOpenHelper {
         return projectName;
     }
 
+    // Method to get the count of images associated with a label in the images table
+    public int getImageCountForLabel(long projectId, String labelName) {
+        int count = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
 
+        // Query to retrieve the count of images associated with the label
+        String query = "SELECT COUNT(*) FROM " + TABLE_IMAGES +
+                " WHERE " + COLUMN_PROJECT_ID + " = ? AND " + COLUMN_SELECTED_LABEL + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId), labelName};
 
+        Cursor cursor = db.rawQuery(query, selectionArgs);
 
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
 
+        return count;
+    }
+    // method to delete a label associated with a project
+    public void deleteLabel(long projectId, String labelName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
+                new String[]{String.valueOf(projectId), labelName});
+        db.close();
+    }
+
+    // New method to delete label and associated images
+    public void deleteLabelAndImages(final long projectId, final String label) {
+        performTransaction(new TransactionCallback() {
+            @Override
+            public void onTransaction(SQLiteDatabase db) {
+                // Delete label
+                db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
+                        new String[]{String.valueOf(projectId), label});
+
+                // Delete associated images
+                db.delete(TABLE_IMAGES, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_SELECTED_LABEL + " = ?",
+                        new String[]{String.valueOf(projectId), label});
+            }
+        });
+    }
+    // Helper method to perform database transactions
+    private void performTransaction(TransactionCallback callback) {
+        SQLiteDatabase db = null;
+        try {
+            db = getWritableDatabase();
+            db.beginTransaction();
+            callback.onTransaction(db);
+            db.setTransactionSuccessful();
+        } finally {
+            if (db != null) {
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    // Interface for the callback used in database transactions
+    private interface TransactionCallback {
+        void onTransaction(SQLiteDatabase db);
+    }
+    public void insertLabel(long projectId, String labelName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Check if the label already exists for the given project
+        if (!labelExists(db, projectId, labelName)) {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_PROJECT_ID, projectId);
+            values.put(COLUMN_LABEL_NAME, labelName);
+
+            db.insert(TABLE_LABELS, null, values);
+        } else {
+            Log.d("DBHelper", "Label already exists for project_id " + projectId + " and label_name " + labelName);
+        }
+
+        db.close();
+    }
+
+    private boolean labelExists(SQLiteDatabase db, long projectId, String labelName) {
+        String selection = COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId), labelName};
+
+        Cursor cursor = db.query(
+                TABLE_LABELS,
+                null,  // Projection: null returns all columns
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        boolean labelExists = cursor != null && cursor.getCount() > 0;
+
+        if (cursor != null) {
+            cursor.close();
+        }
+
+        return labelExists;
+    }
 
 }
 
