@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="?attr/actionBarTheme"
+        app:popupTheme="@style/AppTheme.PopupOverlay" />
 
     <ListView
         android:id="@+id/imageListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/buttonsLayout"/>
+        android:layout_above="@+id/buttonsLayout"
+        android:layout_below="@id/toolbar"/>
 
     <!-- Other UI elements like buttons, labels, etc. -->
 
@@ -32,11 +43,5 @@
             android:layout_weight="1"
             android:text="Take" />
 
-        <Button
-            android:id="@+id/exportButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Export" />
     </LinearLayout>
 </RelativeLayout>

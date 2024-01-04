@@ -139,8 +139,10 @@ public class createProject extends AppCompatActivity {
                         adapter.notifyDataSetChanged();
                         // Navigate to the "select Image" page with project ID
                         Intent intent = new Intent(createProject.this, MainActivity2.class);
-                        intent.putExtra("projectId", projectId); // Pass the project ID
+                        // pass project_id to MainActivity2
+                        intent.putExtra("projectId", projectId);
                         startActivity(intent);
+
 
                     }else {
                         // Log the project insertion failure

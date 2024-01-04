@@ -58,7 +58,7 @@ class DBHelper extends SQLiteOpenHelper {
 
         // Create Images table
         String createImagesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_IMAGES + " (" +
-                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                COLUMN_IMAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 COLUMN_PROJECT_ID + " INTEGER," +
                 COLUMN_IMAGE_PATH + " TEXT," +
                 COLUMN_SELECTED_LABEL + " TEXT);";
@@ -68,13 +68,79 @@ class DBHelper extends SQLiteOpenHelper {
         db.execSQL(createLabelsTableQuery);
     }
 
+    // used to upgrade the database if needed
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Upgrade the database if needed
-        // You can modify the table schema or recreate tables here
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_IMAGES);
         onCreate(db);
     }
+
+    // used to update the project name in DB after making changes to it
+    public void updateProject(long projectId, String newProjectName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PROJECT_NAME, newProjectName);
+
+        db.update(TABLE_PROJECTS, values, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(projectId)});
+        db.close();
+    }
+
+    // used to save new label name selected for a cropped image
+    public void updateLabelForImage(long imageId, String selectedLabel) {
+
+        Log.d("DBHelperBLYYYYYYYSYSGHUWVHSWHWBSDHIW", "ImageID==" + imageId + "selectedlabel==" + selectedLabel );
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_SELECTED_LABEL, selectedLabel);
+
+        String selection = COLUMN_IMAGE_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId)};
+
+        db.update(TABLE_IMAGES, values, selection, selectionArgs);
+    }
+
+    // used to save the label name selected for a cropped image
+    public void saveLabelForImage(long imageId, String selectedLabel) {
+            SQLiteDatabase db = this.getWritableDatabase();
+
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_SELECTED_LABEL, selectedLabel);
+
+            String selection = COLUMN_IMAGE_ID + " = ?";
+            String[] selectionArgs = {String.valueOf(imageId)};
+
+            int rowsUpdated = db.update(TABLE_IMAGES, values, selection, selectionArgs);
+            db.close();
+
+            Log.d("DBHelper", "Rows updated for ImageId " + imageId + ": " + rowsUpdated);
+
+    }
+    // used to insert a new label for a project
+    public void insertLabel(long projectId, String labelName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PROJECT_ID, projectId);
+        values.put(COLUMN_LABEL_NAME, labelName);
+
+        db.insert(TABLE_LABELS, null, values);
+        db.close();
+    }
+
+    // used to delete labels associated to a project_id the user wants to delete
+    public void deleteLabelsForProject(long projectId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ?", new String[]{String.valueOf(projectId)});
+    }
+
+    // used to delete image_paths associated to a project_id the user wants to delete
+    public void deleteImagesForProject(long projectId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_IMAGES, COLUMN_PROJECT_ID + " = ?", new String[]{String.valueOf(projectId)});
+    }
+
     // Method to insert a new image path into the images table
     public long insertImagePath(String imagePath, long projectId) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -83,42 +149,6 @@ class DBHelper extends SQLiteOpenHelper {
         values.put(COLUMN_PROJECT_ID, projectId);
         return db.insert(TABLE_IMAGES, null, values);
     }
-
-    public void saveImageDetails(String imagePath, long projectId, String selectedLabel) {
-        SQLiteDatabase db = getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_IMAGE_PATH, imagePath);
-        values.put(COLUMN_PROJECT_ID, projectId);
-        values.put(COLUMN_SELECTED_LABEL, selectedLabel);
-
-        db.insert(TABLE_IMAGES, null, values);
-        db.close();
-    }
-
-    /*
-    public void saveImageDetails(String imagePath, String selectedLabel) {
-        SQLiteDatabase db = getWritableDatabase();
-
-        try {
-            // Start a transaction
-            db.beginTransaction();
-
-            // Insert image details into the database
-            ContentValues values = new ContentValues();
-            values.put(COLUMN_IMAGE_PATH, imagePath);
-            values.put(COLUMN_SELECTED_LABEL, selectedLabel);
-            // Add other columns as needed
-
-            db.insert(TABLE_IMAGES, null, values);
-
-            // Set the transaction as successful
-            db.setTransactionSuccessful();
-        } finally {
-            // End the transaction
-            db.endTransaction();
-        }
-    }*/
 
     // Method to get image paths for a specific project
     public ArrayList<String> getImagePathsForProject(long projectId) {
@@ -182,5 +212,71 @@ class DBHelper extends SQLiteOpenHelper {
 
         return labels;
     }
+    public long getImageIdFromPath(String imagePath) {
+        long imageId = -1;
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query to retrieve imageId for the given imagePath
+        String[] projection = {COLUMN_IMAGE_ID};
+        String selection = COLUMN_IMAGE_PATH + " = ?";
+        String[] selectionArgs = {imagePath};
+
+        Cursor cursor = db.query(
+                TABLE_IMAGES,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        // Process the cursor and retrieve the imageId
+        if (cursor != null && cursor.moveToFirst()) {
+            imageId = cursor.getLong(cursor.getColumnIndex(COLUMN_IMAGE_ID));
+            cursor.close();
+        }
+
+        return imageId;
+    }
+
+    // method that retrieves a project name from the DB based on project_id
+    public String getProjectName(long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Define the columns you want to retrieve
+        String[] projection = {COLUMN_PROJECT_NAME};
+
+        // Specify the selection criteria
+        String selection = COLUMN_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId)};
+
+        // Query the database
+        Cursor cursor = db.query(
+                TABLE_PROJECTS,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        String projectName = null;
+
+        // Process the cursor and retrieve the project name
+        if (cursor != null && cursor.moveToFirst()) {
+            projectName = cursor.getString(cursor.getColumnIndex(COLUMN_PROJECT_NAME));
+            cursor.close();
+        }
+
+        return projectName;
+    }
+
+
+
+
+
+
 }
 

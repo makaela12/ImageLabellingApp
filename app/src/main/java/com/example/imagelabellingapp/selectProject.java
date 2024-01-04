@@ -1,15 +1,17 @@
 package com.example.imagelabellingapp;// SelectProjectActivity.java
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
@@ -17,19 +19,23 @@ import java.util.ArrayList;
 public class selectProject extends AppCompatActivity {
 
     private ListView projectListView;
-    private Button addProjectButton;
     private ArrayAdapter<String> projectAdapter;
     private DBHelper dbHelper;
+
+    private BroadcastReceiver refreshProjectListReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Refresh the project list
+            refreshProjectList();
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_project);
-
         dbHelper = new DBHelper(this);
-
         projectListView = findViewById(R.id.projectListView);
-        addProjectButton = findViewById(R.id.addProjectButton);
 
         // Retrieve existing project names from the projects table
         ArrayList<String> projectList = getExistingProjects();
@@ -48,12 +54,23 @@ public class selectProject extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Set click listener for the "Add Project" button
-        addProjectButton.setOnClickListener(v -> {
-            // TODO: Add logic to handle adding a new project (e.g., navigate to a new activity)
-            Toast.makeText(selectProject.this, "Add Project Clicked", Toast.LENGTH_SHORT).show();
+        projectListView.setOnItemLongClickListener((parent, view, position, id) -> {
+            String selectedProjectName = projectAdapter.getItem(position);
+            showDeleteConfirmationDialog(selectedProjectName);
+            return true; // to consume the long click event
         });
+
+        // used to register the BroadcastReceiver to listen for the "refresh_project_list" broadcast
+        registerReceiver(refreshProjectListReceiver, new IntentFilter("refresh_project_list"));
+
     }
+    @Override
+    protected void onDestroy() {
+        // used to unregister the BroadcastReceiver when the activity is destroyed
+        unregisterReceiver(refreshProjectListReceiver);
+        super.onDestroy();
+    }
+
     // Helper method to retrieve existing project names from the projects table
     private ArrayList<String> getExistingProjects() {
         ArrayList<String> projects = new ArrayList<>();
@@ -100,4 +117,40 @@ public class selectProject extends AppCompatActivity {
 
         return projectId;
     }
+
+    private void showDeleteConfirmationDialog(String projectName) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete Project");
+        builder.setMessage("Are you sure you want to delete the project '" + projectName + "'?");
+        builder.setPositiveButton("Delete", (dialog, which) -> {
+            // Call a method to delete the project from the database and update the UI
+            deleteProject(projectName);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private void deleteProject(String projectName) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        // get project ID based on the project name
+        int projectId = getProjectId(projectName);
+        // delete related labels
+        dbHelper.deleteLabelsForProject(projectId);
+        // delete related images
+        dbHelper.deleteImagesForProject(projectId);
+        // delete project from projects table
+        db.delete(DBHelper.TABLE_PROJECTS, DBHelper.COLUMN_PROJECT_NAME + " = ?", new String[]{projectName});
+        // update the UI by refreshing the project list
+        refreshProjectList();
+    }
+
+    private void refreshProjectList() {
+        // Retrieve existing project names from the projects table
+        ArrayList<String> projectList = getExistingProjects();
+        // Update the ArrayAdapter and notify the ListView
+        projectAdapter.clear();
+        projectAdapter.addAll(projectList);
+        projectAdapter.notifyDataSetChanged();
+    }
+
 }

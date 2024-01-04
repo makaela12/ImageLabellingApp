@@ -24,9 +24,12 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private Button saveButton;
     private String imagePath;
     private long projectId;
+    private String selectedLabel;
+    private long imageId;
 
     DBHelper dbHelper;
 
+    // TODO: when a user clicks on an item in the MainActivity2 ListView, need a way to allow the user to edit the label or recrop the image
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,16 +41,29 @@ public class ImageDetailsActivity extends AppCompatActivity {
         labelSpinner = findViewById(R.id.labelSpinner);
         saveButton = findViewById(R.id.saveButton);
         dbHelper = new DBHelper(this);
+        // In ImageDetailsActivity onCreate
+        int position = getIntent().getIntExtra("position", -1);
 
 
         // Retrieve image path from the Intent
         imagePath = getIntent().getStringExtra("imagePath");
         projectId = getIntent().getLongExtra("projectId", -1); // -1 is the default value if not found
 
+        // Retrieve imageId from the Intent
+        imageId = getIntent().getLongExtra("imageId", -1);
         loadImageIntoImageView(imagePath);
 
         // Set up label spinner
         loadLabels();
+
+        // Get the selected label from the intent
+        Intent intent = getIntent();
+        if (intent.hasExtra("selectedLabel")) {
+            selectedLabel = intent.getStringExtra("selectedLabel");
+            Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
+        } else {
+            Log.e("ImageDetailsActivity", "Selected label is null");
+        }
 
         // Set click listener for the saveButton
         saveButton.setOnClickListener(v -> saveImageDetails());
@@ -82,61 +98,6 @@ public class ImageDetailsActivity extends AppCompatActivity {
         }
     }
 
-/*
-    private void loadImageIntoImageView(String imagePath) {
-        // TODO: Use an image loading library like Glide or Picasso for efficient image loading
-        // Log the image path to check if it's correct
-       // Log.d("ImageDetailsActivity", "Image Path: " + imagePath);
-        // Example with Glide:
-        //Glide.with(this).load(new File(imagePath)).into(imageView);
-
-        // **** new code *****
-        // Remove the leading "/file:" from the imagePath
-        if (imagePath.startsWith("/file:")) {
-            imagePath = imagePath.substring(6);
-        }
-
-        // Prepend "file://" to create a valid URI
-        String imageUri = "file://" + imagePath;
-
-        // Create a File object from the imagePath
-        File imageFile = new File(imagePath);
-
-
-        // Extract the filename from the imagePath
-      //  String filename = new File(imagePath).getName(); ***** Old
-
-        // Use the correct filename to load the image ***** old
-      //  File filesDir = getFilesDir();
-        //File imageFile = new File(filesDir, filename);
-
-
-        Log.d("Glide", "Original Image Path: " + imagePath);
-   //     Log.d("Glide", "File Name: " + filename);
-        Log.d("Glide", "Complete File Path: " + imageFile.getAbsolutePath());
-
-
-        // old *******
-        // Create a File object from the imagePath
-        //File imageFile = new File(imagePath);
-
-        if (imageFile.exists()) {
-            // Load the image with Glide
-           // Glide.with(this).load(imageFile).into(imageView);
-            Glide.with(this)
-                    .load(Uri.parse(imageUri))
-                    .diskCacheStrategy(DiskCacheStrategy.NONE) // Disable disk caching
-                    .skipMemoryCache(true) // Disable memory caching
-                    .into(imageView);
-        } else {
-            // Log an error or handle the missing file condition
-            Log.e("Glide", "File does not exist: " + imageFile.getAbsolutePath());
-            // You might want to set a placeholder image or handle the missing file condition in another way
-            // For now, we'll clear the ImageView
-            imageView.setImageDrawable(null);
-        }
-    }*/
-
     private void loadLabels() {
         // Retrieve the available labels for the selected project
         List<String> labels = dbHelper.getLabelsForProject(projectId);
@@ -152,17 +113,30 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private void saveImageDetails() {
         // TODO: Implement logic to save image details (e.g., selected label) to the database.
 
+        // Retrieve imageId from the intent
+        //long imageId = getIntent().getLongExtra("imageId", -1);
         // Get selected label from the spinner
-        String selectedLabel = labelSpinner.getSelectedItem().toString();
-
+        selectedLabel = labelSpinner.getSelectedItem().toString();
+        Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
+        //if (imagePath.startsWith("file://")) {
+        //    imagePath = imagePath.substring(6);
+        // }
+        //dbHelper.saveImageDetails(imagePath, projectId, selectedLabel);
         // Save image details to the database using dbHelper
-        dbHelper.saveImageDetails(imagePath, projectId, selectedLabel);
+        //dbHelper.saveImageDetails(imagePath, projectId, selectedLabel);
+        dbHelper.updateLabelForImage(imageId, selectedLabel);
 
-       // Send broadcast to notify MainActivity2 about the new image
-        Intent intent = new Intent("new_image_saved");
-        sendBroadcast(intent);
+        // Send broadcast to notify MainActivity2 about the new image
+        // Intent intent = new Intent("new_image_saved");
+        // Prepare the result intent
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("selectedLabel", selectedLabel);
+        // Include the imageId in the result intent
+        resultIntent.putExtra("imageId", imageId);
+        //sendBroadcast(resultIntent);
 
         // Finish the activity and return to MainActivity2
+        setResult(RESULT_OK, resultIntent);
         finish();
     }
 
