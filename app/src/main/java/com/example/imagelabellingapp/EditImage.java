@@ -32,6 +32,7 @@ public class EditImage extends AppCompatActivity {
     private Spinner labelSpinner;
     private Button saveButton;
     private long imageId;
+    private String newLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,12 +45,14 @@ public class EditImage extends AppCompatActivity {
         saveButton = findViewById(R.id.saveButton);
         dbHelper = new DBHelper(this);
 
-        // Retrieve original image path from Intent
+        // retrieve extras from intent
+        imagePath = getIntent().getStringExtra("imagePath");
         originalImagePath = getIntent().getStringExtra("originalImagePath");
         projectId = getIntent().getLongExtra("projectId", -1); // -1 is the default value if not found
 
         // get original_image_path id
-        imageId = dbHelper.getImageIdFromOPath(originalImagePath);
+        //imageId = dbHelper.getImageIdFromOPath(originalImagePath);
+        imageId = dbHelper.getImageIdFromPath(imagePath);
 
         // Populate spinner with labels associated with the project_id
         List<String> labels = dbHelper.getLabelsForProject(projectId);
@@ -62,24 +65,22 @@ public class EditImage extends AppCompatActivity {
         int selectedLabelPosition = labels.indexOf(currentLabel);
         labelSpinner.setSelection(selectedLabelPosition);
 
-        // Retrieve original image path from Intent
-        imagePath = getIntent().getStringExtra("imagePath");
-
-        // Retrieve original image path from Intent
-        originalImagePath = getIntent().getStringExtra("originalImagePath");
-        projectId = getIntent().getLongExtra("projectId", -1); // -1 is the default value if not found
-
-        // Load the original image into the ImageView
+        // Load the cropped image into the ImageView
         loadImageIntoImageView(imagePath);
 
+        Log.d("EditImage", "ImageId = " + imageId);
+        Log.d("EditImage", "project_id " + projectId);
         Log.d("EditImage", "Original Image Path: " + originalImagePath);
         Log.d("EditImage", "Cropped Image Path: " + imagePath);
+
         // Set click listener for the ImageView
         imageView.setOnClickListener(v -> startCroppingActivity(originalImagePath));
 
+        // set click listener for the save button
         saveButton.setOnClickListener(v -> {
             // Get the selected label from the spinner
-            String newLabel = labelSpinner.getSelectedItem().toString();
+            newLabel = labelSpinner.getSelectedItem().toString();
+            Log.d("EditImage", "New label = " + newLabel);
 
             // Update the label_name in the database for the current image
             dbHelper.updateLabelForImage(imageId, newLabel); // Implement this method in your DBHelper

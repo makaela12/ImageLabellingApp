@@ -1,10 +1,8 @@
 package com.example.imagelabellingapp;
 
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,7 +35,7 @@ public class EditProjectActivity extends AppCompatActivity {
     private ArrayAdapter<String> adapter;
     private long projectId; // Project ID to identify the project being edited
     private ArrayList<String> labelArr;
-    private String projectName;
+    private String projectName, editedLabel;
     private Button labelAdd, saveBtn;
 
 
@@ -118,9 +116,6 @@ public class EditProjectActivity extends AppCompatActivity {
                     params.gravity = Gravity.TOP;
                     view.setLayoutParams(params);
                     snack.show();
-                    // Clear input after adding
-                   // inputLabel.setText("");
-
                 }
             }
         });
@@ -180,13 +175,6 @@ public class EditProjectActivity extends AppCompatActivity {
                     sendBroadcast(dataChangedIntent);
 
                     finish();
-
-                   // Intent intent = new Intent(EditProjectActivity.this, MainActivity2.class);
-                   // intent.putExtra("projectId", projectId);
-                   //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    //startActivity(intent);
-
-                    //finish();
                 }
             }
         });
@@ -250,6 +238,7 @@ public class EditProjectActivity extends AppCompatActivity {
             dbHelper.deleteLabelAndImages(projectId, selectedLabel);
             // Remove the label from the listview
             labelArr.remove(position);
+            loadProjectDetails(projectId);
             adapter.notifyDataSetChanged();
         }
 
@@ -266,7 +255,9 @@ public class EditProjectActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 // Remove the label from the listview and database
                 dbHelper.deleteLabelAndImages(projectId, label);
+                // Reload project details after updating the label
                 labelArr.remove(position);
+                loadProjectDetails(projectId);
                 adapter.notifyDataSetChanged();
             }
         });
@@ -297,14 +288,14 @@ public class EditProjectActivity extends AppCompatActivity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String editedLabel = input.getText().toString().trim();
+                editedLabel = input.getText().toString().trim();
                 if (!editedLabel.isEmpty()) {
                     //labelArr.set(position, editedLabel);
                     dbHelper.updateLabel(projectId, label, editedLabel);
                     // Reload project details after updating the label
                     loadProjectDetails(projectId);
                     adapter.notifyDataSetChanged();
-                    dialog.dismiss();
+                    //dialog.dismiss();
                 } else {
                     // Show an error message if the edited label is empty
                     Toast.makeText(EditProjectActivity.this, "Label cannot be empty", Toast.LENGTH_SHORT).show();
@@ -323,26 +314,5 @@ public class EditProjectActivity extends AppCompatActivity {
     }
 
 
-    // Helper method to insert a project and return the project ID
-    private long insertProject(String projectName) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(DBHelper.COLUMN_PROJECT_NAME, projectName);
-        // The projectId variable is assigned the value returned by db.insert
-        long projectId = db.insert(DBHelper.TABLE_PROJECTS, null, values);
-
-        // Return the projectId
-        return projectId;
-    }
-
-    // Helper method to insert a label with the corresponding project ID
-    private void insertLabel(long projectId, String labelName) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(DBHelper.COLUMN_PROJECT_ID, projectId);
-        values.put(DBHelper.COLUMN_LABEL_NAME, labelName);
-
-        db.insert(DBHelper.TABLE_LABELS, null, values);
-    }
 
 }

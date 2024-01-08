@@ -2,6 +2,7 @@ package com.example.imagelabellingapp;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -16,10 +17,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -42,8 +45,11 @@ public class MainActivity2 extends AppCompatActivity {
     Bitmap bitmap;
     private ListView imageListView;
     private ImageAdapter imageAdapter;
+
+    private ArrayAdapter<String> deleteAdapter;
+
+    private
     DBHelper dbHelper;
-    private File imageFile;
     private long projectId;
     private BroadcastReceiver newImageSavedReceiver;
     private BroadcastReceiver labelChangedReceiver;
@@ -75,22 +81,31 @@ public class MainActivity2 extends AppCompatActivity {
         takeButton = findViewById(R.id.takeButton);
         imageListView = findViewById(R.id.imageListView);
 
+
         // Initialize and set up the image ListView
         setupImageListView();
 
         selectButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(intent, 10);
+            public void onClick(View v) {
+                if (labelNamesExistForProject()) {
+                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(intent, 10);
+                } else {
+                    showLabelErrorDialog();
+                }
             }
         });
 
         takeButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent, 12);
+            public void onClick(View v) {
+                if (labelNamesExistForProject()) {
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(intent, 12);
+                } else {
+                    showLabelErrorDialog();
+                }
             }
         });
         // Initialize the BroadcastReceiver
@@ -122,18 +137,6 @@ public class MainActivity2 extends AppCompatActivity {
         registerReceiver(labelChangedReceiver, new IntentFilter("label_changed"));
 
 
-    // Initialize the BroadcastReceiver
-        //newImageSavedReceiver = new BroadcastReceiver() {
-        //    @Override
-       //     public void onReceive(Context context, Intent intent) {
-                // Refresh the data in the imageAdapter
-      //          setupImageListView();
-      //      }
-      //  };
-        // Register the BroadcastReceiver to listen for the "new_image_saved" broadcast
-        //registerReceiver(newImageSavedReceiver, new IntentFilter("new_image_saved"));
-
-        // After initializing imageAdapter
         // Retrieve saved labels from SharedPreferences
         Map<Long, String> savedLabels = getSavedLabels();
         // Set the saved labels in the adapter
@@ -172,6 +175,38 @@ public class MainActivity2 extends AppCompatActivity {
             }
         });
     }
+    // Check if label names exist for the current project
+    private boolean labelNamesExistForProject() {
+        // Retrieve label names for the current project using dbHelper
+        List<String> labelNames = dbHelper.getLabelsForProject(projectId);
+
+        // Return true if at least one label name exists
+        return labelNames != null && !labelNames.isEmpty();
+    }
+    private void showLabelErrorDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Error");
+        builder.setMessage("Labels must be defined before adding images.\n\nDo you want to create labels now?");
+        builder.setPositiveButton("Create Labels", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Start EditProjectActivity for label creation
+                Intent intent = new Intent(MainActivity2.this, EditProjectActivity.class);
+                intent.putExtra("projectId", projectId);
+                startActivity(intent);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // do nothing (stay on MainActivity2)
+                dialog.dismiss();
+            }
+        });
+        builder.show();
+    }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -444,7 +479,13 @@ public class MainActivity2 extends AppCompatActivity {
                 String selectedImagePath = imageAdapter.getItem(position);
                 String originalImagePath = getOriginalImagePath(selectedImagePath);
                 openEditImage(selectedImagePath, originalImagePath);
+            });
 
+            // Set long-click listener for the ListView items to handle deletions
+            imageListView.setOnItemLongClickListener((parent, view, position, id) -> {
+                // Display a confirmation dialog
+                showDeleteImageDialog(position);
+                return true; // Consume the long-click event
             });
         });
     }
@@ -529,6 +570,34 @@ public class MainActivity2 extends AppCompatActivity {
         return originalImagePath;
     }
 
+    private void showDeleteImageDialog(final int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete Image");
+        builder.setMessage("Are you sure you want to delete this image?");
 
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Get the image path from the adapter based on the position
+                String selectedImagePath = imageAdapter.getItem(position);
+                // Retrieve the corresponding image ID from the database
+                long imageID = dbHelper.getImageIdFromPath(selectedImagePath);
+                // Delete the corresponding row in the images database
+                dbHelper.deleteImage(projectId, imageID);
+
+                // Remove the item from the adapter
+                imageAdapter.remove(selectedImagePath);
+                imageAdapter.notifyDataSetChanged();
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.show();
+    }
 
 }

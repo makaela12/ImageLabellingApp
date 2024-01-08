@@ -103,21 +103,9 @@ class DBHelper extends SQLiteOpenHelper {
         String[] selectionArgs = {String.valueOf(imageId)};
 
         db.update(TABLE_IMAGES, values, selection, selectionArgs);
+        db.close();
     }
 
-    public void updateLabelForProject(long projectId, String selectedLabel) {
-
-        Log.d("DBHelperBLYYYYYYYSYSGHUWVHSWHWBSDHIW", "ImageID==" + projectId + "selectedlabel==" + selectedLabel );
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_SELECTED_LABEL, selectedLabel);
-
-        String selection = COLUMN_PROJECT_ID + " = ?";
-        String[] selectionArgs = {String.valueOf(projectId)};
-
-        db.update(TABLE_IMAGES, values, selection, selectionArgs);
-    }
 
     // used to save the label name selected for a cropped image
     public void saveLabelForImage(long imageId, String selectedLabel) {
@@ -135,17 +123,6 @@ class DBHelper extends SQLiteOpenHelper {
             Log.d("DBHelper", "Rows updated for ImageId " + imageId + ": " + rowsUpdated);
 
     }
-    // used to insert a new label for a project
-    /*
-    public void insertLabel(long projectId, String labelName) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_PROJECT_ID, projectId);
-        values.put(COLUMN_LABEL_NAME, labelName);
-
-        db.insert(TABLE_LABELS, null, values);
-        db.close();
-    }*/
 
     // used to delete labels associated to a project_id the user wants to delete
     public void deleteLabelsForProject(long projectId) {
@@ -369,13 +346,6 @@ class DBHelper extends SQLiteOpenHelper {
 
         return count;
     }
-    // method to delete a label associated with a project
-    public void deleteLabel(long projectId, String labelName) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
-                new String[]{String.valueOf(projectId), labelName});
-        db.close();
-    }
 
     // New method to delete label and associated images
     public void deleteLabelAndImages(final long projectId, final String label) {
@@ -407,7 +377,6 @@ class DBHelper extends SQLiteOpenHelper {
             }
         }
     }
-
 
     // Interface for the callback used in database transactions
     private interface TransactionCallback {
@@ -508,6 +477,19 @@ class DBHelper extends SQLiteOpenHelper {
 
         // Update the label in the database
         db.update(TABLE_LABELS, values, whereClause, whereArgs);
+        db.close();
+    }
+
+    public void deleteImage(long projectId, long imageId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        // define the WHERE clause
+        String selection = COLUMN_PROJECT_ID + " = ? AND " + COLUMN_IMAGE_ID + " = ?";
+        // define the arguments for the WHERE clause
+        String[] selectionArgs = {String.valueOf(projectId), String.valueOf(imageId)};
+        // perform the deletion
+        db.delete(TABLE_IMAGES, selection, selectionArgs);
+        // close the database
+        db.close();
     }
 
 

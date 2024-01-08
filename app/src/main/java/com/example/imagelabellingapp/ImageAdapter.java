@@ -77,17 +77,8 @@ public class ImageAdapter extends ArrayAdapter<String> {
         long imageId = getImageIdFromPath(getItem(position));
         String selectedLabel = selectedLabelsMap.get(imageId);
         Log.d("AYOOOOOO", "Set selectedLabel for imageId " + imageId + ": " + selectedLabel);
-        //String selectedLabel = dbHelper.getLabelForImage(imageId);
         textView.setText(selectedLabel);
 
-     //   String labelFromDB = dbHelper.getLabelForImage(imageId);
-      //  Log.d("ImageAdapter", "Label from DB for imageId " + imageId + ": " + labelFromDB);
-
-       // if (selectedLabel != null && !selectedLabel.isEmpty()) {
-      //      textView.setText(selectedLabel);
-      //  } else {
-      //      Log.e("ImageAdapter", "Label for ImageId " + imageId + " is null or empty");
-      //  }
 
         return view;
     }
