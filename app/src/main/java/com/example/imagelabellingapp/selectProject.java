@@ -11,6 +11,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 
 import androidx.annotation.Nullable;
@@ -26,6 +28,8 @@ public class selectProject extends AppCompatActivity {
     private ListView projectListView;
     private ArrayAdapter<String> projectAdapter;
     private DBHelper dbHelper;
+    private EditText searchEditText;
+    private ImageButton searchButton;
 
     private BroadcastReceiver refreshProjectListReceiver = new BroadcastReceiver() {
         @Override
@@ -39,6 +43,12 @@ public class selectProject extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_project);
+
+        searchEditText = findViewById(R.id.searchEditText);
+        searchButton = findViewById(R.id.searchButton);
+
+        // Set click listener for the search button
+        searchButton.setOnClickListener(view -> searchProjects());
         // Initialize the Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitleTextColor(getResources().getColor(R.color.white));
@@ -186,6 +196,50 @@ public class selectProject extends AppCompatActivity {
             upArrow.setColorFilter(ContextCompat.getColor(this, colorRes), PorterDuff.Mode.SRC_ATOP);
             getSupportActionBar().setHomeAsUpIndicator(upArrow);
         }
+    }
+
+
+    // Method to perform the search and update the project list
+    private void searchProjects() {
+        String searchTerm = searchEditText.getText().toString().trim();
+
+        if (!searchTerm.isEmpty()) {
+            // Retrieve filtered project names from the projects table
+            ArrayList<String> filteredProjects = getFilteredProjects(searchTerm);
+
+            // Update the ArrayAdapter and notify the ListView
+            projectAdapter.clear();
+            projectAdapter.addAll(filteredProjects);
+            projectAdapter.notifyDataSetChanged();
+        } else {
+            // If the search term is empty, refresh the project list
+            refreshProjectList();
+        }
+    }
+
+    // Method to retrieve filtered project names from the projects table
+    private ArrayList<String> getFilteredProjects(String searchTerm) {
+        ArrayList<String> filteredProjects = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        // Query to retrieve project names that contain the search term
+        String query = "SELECT " + DBHelper.COLUMN_PROJECT_NAME + " FROM " + DBHelper.TABLE_PROJECTS +
+                " WHERE " + DBHelper.COLUMN_PROJECT_NAME + " LIKE ?";
+
+        Cursor cursor = db.rawQuery(query, new String[]{"%" + searchTerm + "%"});
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    String projectName = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_PROJECT_NAME));
+                    filteredProjects.add(projectName);
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return filteredProjects;
     }
 
 }

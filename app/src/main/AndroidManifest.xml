@@ -18,13 +18,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ImageLabellingApp"
         tools:targetApi="31">
-
+        <activity
+            android:name=".EditImage"
+            android:exported="false" />
         <activity
             android:name=".EditProjectActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar"
-            />
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ImageDetailsActivity"
             android:exported="false" />
@@ -37,7 +38,7 @@
         <activity
             android:name=".selectProject"
             android:exported="false"
-            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"/>
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".createProject"
             android:exported="false"

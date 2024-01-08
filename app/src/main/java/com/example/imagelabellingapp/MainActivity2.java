@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
@@ -45,6 +46,7 @@ public class MainActivity2 extends AppCompatActivity {
     private File imageFile;
     private long projectId;
     private BroadcastReceiver newImageSavedReceiver;
+    private BroadcastReceiver labelChangedReceiver;
     private static final int REQUEST_IMAGE_DETAILS = 203;
 
     @Override
@@ -91,7 +93,6 @@ public class MainActivity2 extends AppCompatActivity {
                 startActivityForResult(intent, 12);
             }
         });
-
         // Initialize the BroadcastReceiver
         newImageSavedReceiver = new BroadcastReceiver() {
             @Override
@@ -100,8 +101,37 @@ public class MainActivity2 extends AppCompatActivity {
                 setupImageListView();
             }
         };
+
         // Register the BroadcastReceiver to listen for the "new_image_saved" broadcast
         registerReceiver(newImageSavedReceiver, new IntentFilter("new_image_saved"));
+
+        // Initialize the BroadcastReceiver for label changes
+        labelChangedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                long changedImageId = intent.getLongExtra("imageId", -1);
+                String newLabel = intent.getStringExtra("newLabel");
+
+                // Update the label in the imageAdapter
+                imageAdapter.setSelectedLabel(changedImageId, newLabel);
+                imageAdapter.notifyDataSetChanged();
+            }
+        };
+
+        // Register the BroadcastReceiver to listen for the "label_changed" broadcast
+        registerReceiver(labelChangedReceiver, new IntentFilter("label_changed"));
+
+
+    // Initialize the BroadcastReceiver
+        //newImageSavedReceiver = new BroadcastReceiver() {
+        //    @Override
+       //     public void onReceive(Context context, Intent intent) {
+                // Refresh the data in the imageAdapter
+      //          setupImageListView();
+      //      }
+      //  };
+        // Register the BroadcastReceiver to listen for the "new_image_saved" broadcast
+        //registerReceiver(newImageSavedReceiver, new IntentFilter("new_image_saved"));
 
         // After initializing imageAdapter
         // Retrieve saved labels from SharedPreferences
@@ -170,6 +200,7 @@ public class MainActivity2 extends AppCompatActivity {
     protected void onDestroy() {
         // Unregister the BroadcastReceiver when the activity is destroyed
         unregisterReceiver(newImageSavedReceiver);
+        unregisterReceiver(labelChangedReceiver);
         super.onDestroy();
     }
 
@@ -198,6 +229,7 @@ public class MainActivity2 extends AppCompatActivity {
     // Declare variables at the beginning of onActivityResult
     long imageId; // Initialize with a default value
     String selectedLabel;
+    String originalImagePath;
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d("MainActivity2", "onActivityResult called with requestCode: " + requestCode);
@@ -215,12 +247,16 @@ public class MainActivity2 extends AppCompatActivity {
         if (requestCode == 10 && resultCode == RESULT_OK) {
             // retrieve the URI of the selected image
             Uri uri = data.getData();
+            // Get the originalImagePath for gallery-selected images
+            originalImagePath = getOriginalImagePathFromUri(uri);
             // continue with the cropping function
             startCropActivity(uri);
             // if the user wants to capture an image with the camera
         } else if (requestCode == 12 && resultCode == RESULT_OK) {
             // get the captured image bitmap from the extras
             bitmap = (Bitmap) data.getExtras().get("data");
+            // Get the originalImagePath for camera-captured images
+            originalImagePath = getOriginalImagePathFromBitmap(bitmap);
             // continue with cropping function
             startCropActivity(getImageUri(this, bitmap));
 
@@ -235,7 +271,7 @@ public class MainActivity2 extends AppCompatActivity {
                     // gets the URI of the cropped image
                     resultUri = result.getUri();
                     // Save the cropped image to a file and get the imageId
-                    imageId = saveCroppedImageToFile(resultUri, projectId, selectedLabel);
+                    imageId = saveCroppedImageToFile(resultUri, projectId, selectedLabel, originalImagePath);
                     // Start ImageDetailsActivity
                     openImageDetailsActivity(resultUri.toString());
 
@@ -265,6 +301,41 @@ public class MainActivity2 extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+
+    // Method to get the original image path from URI for gallery-selected images
+    private String getOriginalImagePathFromUri(Uri uri) {
+        String[] projection = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            String originalImagePath = cursor.getString(columnIndex);
+            cursor.close();
+            return originalImagePath;
+        }
+        return null;
+    }
+
+    // Method to get the original image path from Bitmap for camera-captured images
+    private String getOriginalImagePathFromBitmap(Bitmap bitmap) {
+        // Save the original image to a temporary file
+        try {
+            File cacheDir = getCacheDir();
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String filename = "original_" + timestamp + ".jpg";
+            File imageFile = new File(cacheDir, filename);
+
+            FileOutputStream fos = new FileOutputStream(imageFile);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+
+            return imageFile.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     // Helper method to get the image URI from the bitmap
     private Uri getImageUri(Context context, Bitmap bitmap) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -273,7 +344,7 @@ public class MainActivity2 extends AppCompatActivity {
         return Uri.parse(path);
     }
 
-    private long saveCroppedImageToFile(Uri resultUri, long projectId, String selectedLabel) {
+    private long saveCroppedImageToFile(Uri resultUri, long projectId, String selectedLabel, String originalImagePath) {
         // Ensure that projectId is not -1
         if (projectId != -1) {
             try {
@@ -293,7 +364,7 @@ public class MainActivity2 extends AppCompatActivity {
                 // Set imagePath to the absolute path of the saved image
                 String imagePath = imageFile.getAbsolutePath();
                 // Save the image path to the images table and get the imageId
-               long imageId = dbHelper.insertImagePath(imagePath, projectId);
+               long imageId = dbHelper.insertImagePath(originalImagePath, imagePath, projectId);
 
                 Log.e("CORRECT IMAGEID?????", "Invalid projectId: " + imageId);
 
@@ -371,7 +442,9 @@ public class MainActivity2 extends AppCompatActivity {
             // Set click listener for the ListView items
             imageListView.setOnItemClickListener((parent, view, position, id) -> {
                 String selectedImagePath = imageAdapter.getItem(position);
-                openImageDetailsActivity(selectedImagePath);
+                String originalImagePath = getOriginalImagePath(selectedImagePath);
+                openEditImage(selectedImagePath, originalImagePath);
+
             });
         });
     }
@@ -384,6 +457,16 @@ public class MainActivity2 extends AppCompatActivity {
         intent.putExtra("imageId", imageId);
         intent.putExtra("selectedLabel", selectedLabel);
         startActivityForResult(intent, REQUEST_IMAGE_DETAILS);
+    }
+
+    private void openEditImage(String imagePath, String originalImagePath) {
+        Log.d("MainActivity2", "Opening EditImage activity with Image Path: " + imagePath);
+        Intent editImageIntent = new Intent(MainActivity2.this, EditImage.class);
+        editImageIntent.putExtra("imagePath", imagePath);
+        editImageIntent.putExtra("originalImagePath", originalImagePath);
+        editImageIntent.putExtra("projectId", projectId);
+        editImageIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);  // Add this line
+        startActivity(editImageIntent);
     }
 
     @Override
@@ -411,6 +494,7 @@ public class MainActivity2 extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        setupImageListView();
         // Refresh the project list in selectProject activity
         refreshProjectListInSelectProject();
         // Register a BroadcastReceiver to listen for data changes
@@ -436,6 +520,13 @@ public class MainActivity2 extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();
+    }
+
+    private String getOriginalImagePath(String selectedImagePath) {
+        // Use your DBHelper to query the original image path from the database
+        String originalImagePath = dbHelper.getOriginalImagePath(selectedImagePath);
+
+        return originalImagePath;
     }
 
 

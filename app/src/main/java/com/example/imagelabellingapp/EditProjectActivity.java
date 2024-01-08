@@ -299,7 +299,10 @@ public class EditProjectActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 String editedLabel = input.getText().toString().trim();
                 if (!editedLabel.isEmpty()) {
-                    labelArr.set(position, editedLabel);
+                    //labelArr.set(position, editedLabel);
+                    dbHelper.updateLabel(projectId, label, editedLabel);
+                    // Reload project details after updating the label
+                    loadProjectDetails(projectId);
                     adapter.notifyDataSetChanged();
                     dialog.dismiss();
                 } else {
@@ -318,6 +321,7 @@ public class EditProjectActivity extends AppCompatActivity {
 
         builder.show();
     }
+
 
     // Helper method to insert a project and return the project ID
     private long insertProject(String projectName) {
