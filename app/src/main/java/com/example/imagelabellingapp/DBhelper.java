@@ -492,6 +492,23 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void updateSelectedLabelInImages(long projectId, String oldLabel, String newLabel) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_SELECTED_LABEL, newLabel);
+
+        // Specify the WHERE clause to identify the rows to be updated
+        String whereClause = COLUMN_PROJECT_ID + " = ? AND " + COLUMN_SELECTED_LABEL + " = ?";
+        String[] whereArgs = {String.valueOf(projectId), oldLabel};
+
+        // Perform the update
+        db.update(TABLE_IMAGES, values, whereClause, whereArgs);
+
+        db.close();
+    }
+
+
 
 }
 

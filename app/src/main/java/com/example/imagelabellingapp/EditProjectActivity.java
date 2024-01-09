@@ -33,10 +33,11 @@ public class EditProjectActivity extends AppCompatActivity {
     private EditText projName, inputLabel;
     private ListView labelList;
     private ArrayAdapter<String> adapter;
-    private long projectId; // Project ID to identify the project being edited
+    private long projectId;
     private ArrayList<String> labelArr;
     private String projectName, editedLabel;
     private Button labelAdd, saveBtn;
+
 
 
 
@@ -124,7 +125,6 @@ public class EditProjectActivity extends AppCompatActivity {
         labelList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int item, long l) {
-              //  if (!labelArr.isEmpty() && item < labelArr.size()) {
                     final String selectedLabel = labelArr.get(item);
 
                     // Creating options for the user
@@ -171,10 +171,10 @@ public class EditProjectActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
 
                     //Broadcast a message indicating that the data has changed
-                    Intent dataChangedIntent = new Intent("data_changed");
-                    sendBroadcast(dataChangedIntent);
+                     Intent dataChangedIntent = new Intent("data_changed");
+                     sendBroadcast(dataChangedIntent);
 
-                    finish();
+                     finish();
                 }
             }
         });
@@ -290,10 +290,12 @@ public class EditProjectActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 editedLabel = input.getText().toString().trim();
                 if (!editedLabel.isEmpty()) {
-                    //labelArr.set(position, editedLabel);
                     dbHelper.updateLabel(projectId, label, editedLabel);
+                    // Update the selected_label in the images table
+                    dbHelper.updateSelectedLabelInImages(projectId, label, editedLabel);
                     // Reload project details after updating the label
                     loadProjectDetails(projectId);
+                    // Notify MainActivity2 about the label change
                     adapter.notifyDataSetChanged();
                     //dialog.dismiss();
                 } else {
@@ -312,6 +314,7 @@ public class EditProjectActivity extends AppCompatActivity {
 
         builder.show();
     }
+
 
 
 

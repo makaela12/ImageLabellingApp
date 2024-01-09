@@ -35,12 +35,6 @@ public class ImageAdapter extends ArrayAdapter<String> {
         this.dbHelper = dbHelper;
 
     }
-    // Update the method to set selected labels map
-    public void setSelectedLabelsMap(Map<Long, String> labelsMap) {
-        selectedLabelsMap.clear();
-        selectedLabelsMap.putAll(labelsMap);
-        notifyDataSetChanged(); // Notify the adapter that the data has changed
-    }
 
     public void setSelectedLabel(long imageId, String selectedLabel) {
         selectedLabelsMap.put(imageId, selectedLabel);
@@ -67,18 +61,19 @@ public class ImageAdapter extends ArrayAdapter<String> {
         // Set your data to the views
         String imagePath = getItem(position);
 
+        // Get the label for the corresponding imageId from the database
+        String label = dbHelper.getCurrentLabelForImage(getImageIdFromPath(imagePath));
+
         // Load image into ImageView using Glide
         Glide.with(context)
-                .load(new File(imagePath)) // Assuming imagePath is the file path
-                .centerCrop() // You can customize this based on your needs
+                .load(new File(imagePath))
+                .centerCrop()
                 .into(imageView);
 
-        // Set text to TextView using the label list
-        long imageId = getImageIdFromPath(getItem(position));
-        String selectedLabel = selectedLabelsMap.get(imageId);
-        Log.d("AYOOOOOO", "Set selectedLabel for imageId " + imageId + ": " + selectedLabel);
-        textView.setText(selectedLabel);
+        Log.d("imageadapter AYOOOOOO", "Set selectedLabel for imageId " + imagePath + ": " + selectedLabel);
 
+        // Set the label in the TextView
+        textView.setText(label);
 
         return view;
     }
@@ -102,6 +97,7 @@ public class ImageAdapter extends ArrayAdapter<String> {
 
         editor.apply();
     }
+
 
 
 }

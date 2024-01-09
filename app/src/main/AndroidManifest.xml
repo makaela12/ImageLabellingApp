@@ -30,12 +30,6 @@
             android:name=".ImageDetailsActivity"
             android:exported="false" />
         <activity
-            android:name=".LabelImageActivity"
-            android:exported="false" />
-        <activity
-            android:name=".drawBox"
-            android:exported="false" />
-        <activity
             android:name=".selectProject"
             android:exported="false"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />

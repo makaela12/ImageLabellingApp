@@ -17,7 +17,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
@@ -40,14 +39,10 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity2 extends AppCompatActivity {
-
     Button selectButton, takeButton;
     Bitmap bitmap;
     private ListView imageListView;
     private ImageAdapter imageAdapter;
-
-    private ArrayAdapter<String> deleteAdapter;
-
     private
     DBHelper dbHelper;
     private long projectId;
@@ -61,11 +56,11 @@ public class MainActivity2 extends AppCompatActivity {
         setContentView(R.layout.activity_main2);
         dbHelper = new DBHelper(this);
 
-        // Check if there is saved instance state
+
+        // Check if there is saved instance state; allows the ListView with contents to show
         if (savedInstanceState != null) {
             // Restore necessary data
             projectId = savedInstanceState.getLong("projectId");
-            // Restore any other data you might need
         } else {
             // Handle the normal creation of the activity
             Intent intent = getIntent();
@@ -73,17 +68,26 @@ public class MainActivity2 extends AppCompatActivity {
                 projectId = intent.getLongExtra("projectId", -1);
             }
         }
-
         // permission to let the user access the camera
         getPermission();
 
+        // initalize UI elements
         selectButton = findViewById(R.id.selectButton);
         takeButton = findViewById(R.id.takeButton);
         imageListView = findViewById(R.id.imageListView);
 
-
         // Initialize and set up the image ListView
         setupImageListView();
+
+        // Set up the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back button)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // Inflate the menu
+        toolbar.inflateMenu(R.menu.menu_main);
 
         selectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,6 +112,7 @@ public class MainActivity2 extends AppCompatActivity {
                 }
             }
         });
+
         // Initialize the BroadcastReceiver
         newImageSavedReceiver = new BroadcastReceiver() {
             @Override
@@ -116,7 +121,6 @@ public class MainActivity2 extends AppCompatActivity {
                 setupImageListView();
             }
         };
-
         // Register the BroadcastReceiver to listen for the "new_image_saved" broadcast
         registerReceiver(newImageSavedReceiver, new IntentFilter("new_image_saved"));
 
@@ -136,21 +140,6 @@ public class MainActivity2 extends AppCompatActivity {
         // Register the BroadcastReceiver to listen for the "label_changed" broadcast
         registerReceiver(labelChangedReceiver, new IntentFilter("label_changed"));
 
-
-        // Retrieve saved labels from SharedPreferences
-        Map<Long, String> savedLabels = getSavedLabels();
-        // Set the saved labels in the adapter
-        imageAdapter.setSelectedLabelsMap(savedLabels);
-
-        // Set up the Toolbar
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        // Enable the home button (back button)
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        // Inflate the menu
-        toolbar.inflateMenu(R.menu.menu_main);
 
         // Set up menu item click listener
         toolbar.setOnMenuItemClickListener(item -> {
@@ -175,6 +164,7 @@ public class MainActivity2 extends AppCompatActivity {
             }
         });
     }
+
     // Check if label names exist for the current project
     private boolean labelNamesExistForProject() {
         // Retrieve label names for the current project using dbHelper
@@ -490,6 +480,7 @@ public class MainActivity2 extends AppCompatActivity {
         });
     }
 
+    // method to start the ImageDetailsActivity
     private void openImageDetailsActivity(String imagePath) {
         Log.d("MainActivity2", "Opening ImageDetailsActivity with Image Path: " + imagePath);
         Intent intent = new Intent(MainActivity2.this, ImageDetailsActivity.class);
@@ -500,6 +491,7 @@ public class MainActivity2 extends AppCompatActivity {
         startActivityForResult(intent, REQUEST_IMAGE_DETAILS);
     }
 
+    // method to start the EditImage activity
     private void openEditImage(String imagePath, String originalImagePath) {
         Log.d("MainActivity2", "Opening EditImage activity with Image Path: " + imagePath);
         Intent editImageIntent = new Intent(MainActivity2.this, EditImage.class);
@@ -515,8 +507,8 @@ public class MainActivity2 extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putLong("projectId", projectId);
         outState.putString("selectedLabel", selectedLabel);
-        // Save any other data you want to persist
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -545,6 +537,7 @@ public class MainActivity2 extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 // Update the ListView when data changes
                 updateListView();
+                setupImageListView();
             }
         };
         registerReceiver(dataChangedReceiver, intentFilter);
@@ -584,7 +577,6 @@ public class MainActivity2 extends AppCompatActivity {
                 long imageID = dbHelper.getImageIdFromPath(selectedImagePath);
                 // Delete the corresponding row in the images database
                 dbHelper.deleteImage(projectId, imageID);
-
                 // Remove the item from the adapter
                 imageAdapter.remove(selectedImagePath);
                 imageAdapter.notifyDataSetChanged();
