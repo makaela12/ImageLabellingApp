@@ -37,7 +37,8 @@
         android:fontFamily="sans-serif"
         android:text="           New Project           "
         android:textAllCaps="false"
-        android:textColor="#464646" />
+        android:textColor="#464646"
+        app:cornerRadius="200dp" />
 
     <Button
         android:id="@+id/oldProject"
@@ -50,7 +51,8 @@
         android:fontFamily="sans-serif"
         android:text="Choose Existing Project"
         android:textAllCaps="false"
-        android:textColor="#464646" />
+        android:textColor="#464646"
+        app:cornerRadius="200dp" />
 
 
 </RelativeLayout>

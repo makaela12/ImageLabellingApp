@@ -1,17 +1,23 @@
 package com.example.imagelabellingapp;
 
+import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -25,6 +31,8 @@ public class EditImage extends AppCompatActivity {
 
     private static final int CROP_IMAGE_REQUEST_CODE = 203; // Define a custom request code
     private ImageView imageView;
+
+    private TextView text1, text2;
     private String originalImagePath;
     private String imagePath;
     private DBHelper dbHelper;
@@ -34,15 +42,34 @@ public class EditImage extends AppCompatActivity {
     private long imageId;
     private String newLabel;
 
+    private ImageButton helpButton;
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_image_details);
+        setContentView(R.layout.activity_edit_image);
 
         // Initialize UI elements
         imageView = findViewById(R.id.imageView);
         labelSpinner = findViewById(R.id.labelSpinner);
         saveButton = findViewById(R.id.saveButton);
+        text1 = findViewById(R.id.textView);
+        text2= findViewById(R.id.textView2);
+        // Set click listener for the helpButton1
+        helpButton = findViewById(R.id.helpButton);
+
+        // Initialize the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back arrow)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // set onClicklisteners for both help buttons
+        helpButton.setOnClickListener(v -> showHelpPopup("To resize the bounding box,\ntap on the image.\n\nTo change the label,\n select a new label from the list.\n\nClick the save button to\nsave your changes."));
+
         dbHelper = new DBHelper(this);
 
         // retrieve extras from intent
@@ -95,6 +122,22 @@ public class EditImage extends AppCompatActivity {
             //startActivity(intent);
             finish(); // Close the current activity
         });
+    }
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 
     private void loadImageIntoImageView(String imagePath) {
@@ -236,6 +279,16 @@ public class EditImage extends AppCompatActivity {
         }
 
         return null;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }
 

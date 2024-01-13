@@ -1,5 +1,6 @@
-package com.example.imagelabellingapp;// SelectProjectActivity.java
+package com.example.imagelabellingapp;
 
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +14,9 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -29,12 +32,12 @@ public class selectProject extends AppCompatActivity {
     private ArrayAdapter<String> projectAdapter;
     private DBHelper dbHelper;
     private EditText searchEditText;
-    private ImageButton searchButton;
+    private ImageButton searchButton, refreshButton, helpButton;
 
     private BroadcastReceiver refreshProjectListReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Refresh the project list
+            // refresh the project list
             refreshProjectList();
         }
     };
@@ -46,6 +49,8 @@ public class selectProject extends AppCompatActivity {
 
         searchEditText = findViewById(R.id.searchEditText);
         searchButton = findViewById(R.id.searchButton);
+        refreshButton = findViewById(R.id.refreshButton);
+        helpButton = findViewById(R.id.helpButton);
 
         // Set click listener for the search button
         searchButton.setOnClickListener(view -> searchProjects());
@@ -66,6 +71,17 @@ public class selectProject extends AppCompatActivity {
             }
         });
         changeBackArrowColor(toolbar, R.color.white);
+
+        // set OnClickListener for the refresh button
+        refreshButton.setOnClickListener(v -> {
+            // Clear the search EditText
+            searchEditText.setText("");
+            // Refresh the project list
+            refreshProjectList();
+        });
+
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("Enter a keyword or full project\nname you would like to search.\n\nClick on magnifying glass icon\nto display search results."));
 
 
         dbHelper = new DBHelper(this);
@@ -240,6 +256,22 @@ public class selectProject extends AppCompatActivity {
         }
 
         return filteredProjects;
+    }
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 
 }

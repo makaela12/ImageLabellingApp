@@ -1,6 +1,8 @@
 package com.example.imagelabellingapp;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -13,7 +15,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,11 +41,12 @@ public class EditProjectActivity extends AppCompatActivity {
     private long projectId;
     private ArrayList<String> labelArr;
     private String projectName, editedLabel;
-    private Button labelAdd, saveBtn;
+    private Button saveBtn;
+    private ImageButton labelAdd;
+    private ImageButton helpButton;
 
 
-
-
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +81,11 @@ public class EditProjectActivity extends AppCompatActivity {
         saveBtn = findViewById(R.id.saveBtn);
         labelAdd = findViewById(R.id.labelAdd);
         labelArr = new ArrayList<>();
+        helpButton = findViewById(R.id.helpButton);
+
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("To edit the project name,\n click on the current name.\n\nTo edit or delete a label, click\nand hold down on the label."+
+                "\n\nTo add a new label, enter the\nlabel name and click the '+' icon."));
 
 
         // Initialize the adapter and set it to the labelList
@@ -179,6 +190,22 @@ public class EditProjectActivity extends AppCompatActivity {
             }
         });
 
+    }
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 
     // method to call the tintDrawable method to change the color of the 'x' icon to white

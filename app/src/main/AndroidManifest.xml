@@ -14,31 +14,38 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.ImageLabellingApp"
         tools:targetApi="31">
         <activity
+            android:label="Image Details"
             android:name=".EditImage"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"/>
         <activity
             android:name=".EditProjectActivity"
             android:exported="false"
+            android:label="Edit Project Details"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar"
             android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ImageDetailsActivity"
+            android:label="Label Image"
             android:exported="false" />
         <activity
             android:name=".selectProject"
+            android:label="Select a Project"
             android:exported="false"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".createProject"
+            android:label="New Project"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustPan"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".MainActivity2"
+            android:label="Project Images"
             android:exported="false"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity

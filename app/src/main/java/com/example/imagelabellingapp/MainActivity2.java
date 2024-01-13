@@ -1,5 +1,6 @@
 package com.example.imagelabellingapp;
 
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -17,8 +18,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -39,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity2 extends AppCompatActivity {
-    Button selectButton, takeButton;
+    ImageButton selectButton, takeButton, helpButton;
     Bitmap bitmap;
     private ListView imageListView;
     private ImageAdapter imageAdapter;
@@ -55,7 +58,17 @@ public class MainActivity2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
         dbHelper = new DBHelper(this);
+        // initalize UI elements
+        selectButton = findViewById(R.id.selectButton);
+        takeButton = findViewById(R.id.takeButton);
+        imageListView = findViewById(R.id.imageListView);
+        helpButton = findViewById(R.id.helpButton);
 
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("To add an image to your\nproject, click the 'Capture'\n or 'Import' buttons below." +
+                "\n\nTo delete an image from your\nproject, click and hold on the\nimage you would like to delete." +
+                "\n\nTo resize the bounding box or\nchange the label of an image\nsimply click on the image to be\nredirected to the 'Edit Image' screen."+
+                "\n\nTo edit your projects name or labels,\n navigate to the menu icon in the top\nright corner and select 'Edit Project'."));
 
         // Check if there is saved instance state; allows the ListView with contents to show
         if (savedInstanceState != null) {
@@ -70,11 +83,6 @@ public class MainActivity2 extends AppCompatActivity {
         }
         // permission to let the user access the camera
         getPermission();
-
-        // initalize UI elements
-        selectButton = findViewById(R.id.selectButton);
-        takeButton = findViewById(R.id.takeButton);
-        imageListView = findViewById(R.id.imageListView);
 
         // Initialize and set up the image ListView
         setupImageListView();
@@ -590,6 +598,23 @@ public class MainActivity2 extends AppCompatActivity {
             }
         });
         builder.show();
+    }
+
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 
 }

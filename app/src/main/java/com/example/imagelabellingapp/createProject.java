@@ -1,6 +1,8 @@
 package com.example.imagelabellingapp;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,17 +10,21 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -29,12 +35,16 @@ public class createProject extends AppCompatActivity {
     TextView projTitle, labelTitle;
 
     EditText inputLabel, projName;
-    Button labelAdd, saveBtn;
+    Button saveBtn;
+
+    ImageButton labelAdd, helpButton;
     ListView labelList;
     private String projectName;
     private ArrayList<String> labelArr;
     private ArrayAdapter<String> adapter;
 
+
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +60,18 @@ public class createProject extends AppCompatActivity {
         labelTitle = findViewById(R.id.projTitle);
         labelArr = new ArrayList<>();
         saveBtn = findViewById(R.id.saveBtn);
+        helpButton = findViewById(R.id.helpButton);
+
+        // Initialize the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back arrow)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("Enter a label name and click the '+'\nto add the label to your project.\n\nClick and hold on a label\n to edit or delete"));
 
         // initializes adapter for list view
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labelArr); // Use the class-level variable
@@ -61,25 +83,36 @@ public class createProject extends AppCompatActivity {
         labelAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // getting text from edittext
+                // Getting text from edittext
                 String labelName = inputLabel.getText().toString().trim();
 
-                // checks to see if item is not empty
+                // Checks if the label name is not empty
                 if (!labelName.isEmpty()) {
-                    // adds item to list
-                    labelArr.add(labelName);
-                    // notifies adapter that data in list is updated, updates list view
-                    adapter.notifyDataSetChanged();
-                    // Snackbar for label added
-                    Snackbar snack = Snackbar.make(findViewById(android.R.id.content), labelName + " was added", Snackbar.LENGTH_LONG);
-                    View view = snack.getView();
-                    FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
-                    params.gravity = Gravity.TOP;
-                    view.setLayoutParams(params);
-                    snack.show();
-                    // Clear input after adding
-                    inputLabel.setText("");
-
+                    // Checks if the label name already exists
+                    if (!labelArr.contains(labelName)) {
+                        // Adds item to the list
+                        labelArr.add(labelName);
+                        // Notifies the adapter that the data in the list is updated, updating the list view
+                        adapter.notifyDataSetChanged();
+                        // Snackbar for label added
+                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), labelName + " was added", Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+                        params.gravity = Gravity.TOP;
+                        view.setLayoutParams(params);
+                        snack.show();
+                        // Clear input after adding
+                        inputLabel.setText("");
+                    } else {
+                        Snackbar snack3 = Snackbar.make(findViewById(android.R.id.content), "Label name " + labelName + " already exists", Snackbar.LENGTH_LONG);
+                        View view = snack3.getView();
+                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+                        params.gravity = Gravity.TOP;
+                        view.setLayoutParams(params);
+                        snack3.show();
+                        // Show an error message if the label name already exists
+                        Toast.makeText(createProject.this, "Label name already exists", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
@@ -144,17 +177,37 @@ public class createProject extends AppCompatActivity {
                         startActivity(intent);
 
                         finish();
-
-
-                    }else {
-                        // Log the project insertion failure
-                        Log.e("createProject", "Failed to insert project into the database.");
                     }
-                }
+                }else{
+                // Log the project insertion failure
+                    Snackbar snack2 = Snackbar.make(findViewById(android.R.id.content), "Please enter a project name", Snackbar.LENGTH_LONG);
+                    View view = snack2.getView();
+                    FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+                    params.gravity = Gravity.TOP;
+                    view.setLayoutParams(params);
+                    snack2.show();
+                Log.e("createProject", "Failed to insert project into the database.");
             }
+        }
         });
-
     }
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
+    }
+
     // Helper method to insert a project and return the project ID
     private long insertProject(String projectName) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -219,5 +272,18 @@ public class createProject extends AppCompatActivity {
 
         builder.show();
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+
 
 }
