@@ -24,14 +24,15 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
+
 import java.io.File;
 import java.util.List;
 
-public class EditImage extends AppCompatActivity {
+public class EditImage extends AppCompatActivity implements BoundingBoxImageView.BoundingBoxListener{
 
     private static final int CROP_IMAGE_REQUEST_CODE = 203; // Define a custom request code
-    private ImageView imageView;
-
+    //private ImageView imageView;
+    private BoundingBoxImageView imageView;
     private TextView text1, text2;
     private String originalImagePath;
     private String imagePath;
@@ -56,8 +57,8 @@ public class EditImage extends AppCompatActivity {
         saveButton = findViewById(R.id.saveButton);
         text1 = findViewById(R.id.textView);
         text2= findViewById(R.id.textView2);
-        // Set click listener for the helpButton1
         helpButton = findViewById(R.id.helpButton);
+
 
         // Initialize the Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -68,7 +69,7 @@ public class EditImage extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // set onClicklisteners for both help buttons
-        helpButton.setOnClickListener(v -> showHelpPopup("To resize the bounding box,\ntap on the image.\n\nTo change the label,\n select a new label from the list.\n\nClick the save button to\nsave your changes."));
+        helpButton.setOnClickListener(v -> showHelpPopup("To resize the bounding box,\ntap the side of the box\nyou would like to adjust\nand drag it to a new position\n\nTo move the bounding box,\ntap anywhere inside the box\nand drag it to a new position.\n\nTo change the label,\n select a new label from the list.\n\nClick the save button to\nsave your changes."));
 
         dbHelper = new DBHelper(this);
 
@@ -80,6 +81,10 @@ public class EditImage extends AppCompatActivity {
         // get original_image_path id
         //imageId = dbHelper.getImageIdFromOPath(originalImagePath);
         imageId = dbHelper.getImageIdFromPath(imagePath);
+
+        Log.d("EditImage", "ImageId before drawBoundingBox: " + imageId);
+        // Draw bounding box on the ImageView
+        drawBoundingBox(imageId);
 
         // Populate spinner with labels associated with the project_id
         List<String> labels = dbHelper.getLabelsForProject(projectId);
@@ -100,8 +105,8 @@ public class EditImage extends AppCompatActivity {
         Log.d("EditImage", "Original Image Path: " + originalImagePath);
         Log.d("EditImage", "Cropped Image Path: " + imagePath);
 
-        // Set click listener for the ImageView
-        imageView.setOnClickListener(v -> startCroppingActivity(originalImagePath));
+        // Set BoundingBoxListener to receive callbacks for saving bounding box coordinates
+        imageView.setBoundingBoxListener(this);
 
         // set click listener for the save button
         saveButton.setOnClickListener(v -> {
@@ -112,14 +117,16 @@ public class EditImage extends AppCompatActivity {
             // Update the label_name in the database for the current image
             dbHelper.updateLabelForImage(imageId, newLabel); // Implement this method in your DBHelper
 
+            // Save the final bounding box coordinates
+            if (imageView != null) {
+                imageView.saveBoundingBox();
+            }
+
             Intent labelChangedIntent = new Intent("label_changed");
             labelChangedIntent.putExtra("imageId", imageId);
             labelChangedIntent.putExtra("newLabel", newLabel);
             sendBroadcast(labelChangedIntent);
 
-            // Navigate back to MainActivity2
-            //Intent intent = new Intent(EditImage.this, MainActivity2.class);
-            //startActivity(intent);
             finish(); // Close the current activity
         });
     }
@@ -149,7 +156,7 @@ public class EditImage extends AppCompatActivity {
         File imageFile = new File(imagePath);
 
         // Log the file path to check if it's correct
-        Log.d("ImageDetailsActivity", "Complete File Path: " + imageFile.getAbsolutePath());
+        Log.d("EditImage", "Complete File Path: " + imageFile.getAbsolutePath());
 
         if (imageFile.exists()) {
             // Load the image with Glide
@@ -210,10 +217,10 @@ public class EditImage extends AppCompatActivity {
                             // Load the cropped image into the ImageView
                             loadImageIntoImageView(croppedImagePath.toString());
                         } else {
-                            Log.e("ImageEditingActivity", "ImageId not found for path: " + croppedImagePath);
+                            Log.e("EditImage", "ImageId not found for path: " + croppedImagePath);
                         }
                     } else {
-                        Log.e("ImageEditingActivity", "Cropped image path is null");
+                        Log.e("EditImage", "Cropped image path is null");
                     }
 
 
@@ -232,7 +239,7 @@ public class EditImage extends AppCompatActivity {
 
                 } else {
                     // Handle the case where CropImage result is null
-                    Log.e("ImageEditingActivity", "CropImage result is null");
+                    Log.e("EditImage", "CropImage result is null");
                 }
             }
         }
@@ -290,5 +297,40 @@ public class EditImage extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+    // Add this method to draw bounding box on BoundingBoxImageView
+    private void drawBoundingBox(long imageId) {
+        Log.d("EditImage", "drawBoundingBox: Called for imageId = " + imageId);
+        Cursor cursor = dbHelper.getBoundingBoxForImage(imageId);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            float xMin = cursor.getFloat(cursor.getColumnIndex(DBHelper.COLUMN_BBOX_X_MIN));
+            float yMin = cursor.getFloat(cursor.getColumnIndex(DBHelper.COLUMN_BBOX_Y_MIN));
+            float xMax = cursor.getFloat(cursor.getColumnIndex(DBHelper.COLUMN_BBOX_X_MAX));
+            float yMax = cursor.getFloat(cursor.getColumnIndex(DBHelper.COLUMN_BBOX_Y_MAX));
+
+            Log.d("EditImage", "BoundingBox Coordinates: xMin=" + xMin + ", yMin=" + yMin + ", xMax=" + xMax + ", yMax=" + yMax);
+
+            // Create a float array with bounding box coordinates
+           float[] boundingBox = {xMin, yMin, xMax, yMax};
+
+            // Call drawBoundingBox on BoundingBoxImageView
+            imageView.drawBoundingBox(boundingBox);
+        }
+
+        if (cursor != null) {
+            cursor.close();
+        }
+    }
+
+    // Implement the onSaveBoundingBox method from BoundingBoxListener
+    @Override
+    public void onSaveBoundingBox(float xMin, float yMin, float xMax, float yMax) {
+        // Save the bounding box coordinates to the database
+        // You should implement this method in your DBHelper
+        dbHelper.updateBoundingBoxCoordinates(imageId, xMin, yMin, xMax, yMax);
+    }
+
+
 }
 

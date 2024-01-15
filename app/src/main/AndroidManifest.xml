@@ -17,11 +17,25 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ImageLabellingApp"
         tools:targetApi="31">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.imagelabellingapp.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
         <activity
-            android:label="Image Details"
+            android:name=".ExportProjectActivity"
+            android:label="Export Project"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"
+            android:exported="false" />
+        <activity
             android:name=".EditImage"
             android:exported="false"
-            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"/>
+            android:label="Image Details"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".EditProjectActivity"
             android:exported="false"
@@ -30,23 +44,23 @@
             android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ImageDetailsActivity"
-            android:label="Label Image"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Label Image" />
         <activity
             android:name=".selectProject"
-            android:label="Select a Project"
             android:exported="false"
+            android:label="Select a Project"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".createProject"
-            android:label="New Project"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan"
-            android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
+            android:label="New Project"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".MainActivity2"
-            android:label="Project Images"
             android:exported="false"
+            android:label="Project Images"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
             android:name=".MainActivity"
@@ -66,6 +80,7 @@
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
+
     </application>
 
 </manifest>

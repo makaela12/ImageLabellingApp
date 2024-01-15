@@ -22,27 +22,32 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class MainActivity2 extends AppCompatActivity {
-    ImageButton selectButton, takeButton, helpButton;
+    ImageButton selectButton, takeButton, helpButton, exportButton;
     Bitmap bitmap;
     private ListView imageListView;
     private ImageAdapter imageAdapter;
@@ -63,6 +68,7 @@ public class MainActivity2 extends AppCompatActivity {
         takeButton = findViewById(R.id.takeButton);
         imageListView = findViewById(R.id.imageListView);
         helpButton = findViewById(R.id.helpButton);
+        exportButton = findViewById(R.id.exportButton);
 
         // set onClickListener for help button
         helpButton.setOnClickListener(v -> showHelpPopup("To add an image to your\nproject, click the 'Capture'\n or 'Import' buttons below." +
@@ -121,6 +127,13 @@ public class MainActivity2 extends AppCompatActivity {
             }
         });
 
+        exportButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showExportDialog();
+            }
+        });
+
         // Initialize the BroadcastReceiver
         newImageSavedReceiver = new BroadcastReceiver() {
             @Override
@@ -151,26 +164,53 @@ public class MainActivity2 extends AppCompatActivity {
 
         // Set up menu item click listener
         toolbar.setOnMenuItemClickListener(item -> {
-            switch (item.getItemId()) {
-                // handles edit project action
-                case R.id.menu_edit_project:
-                    if (projectId != -1) {
-                        Intent editProjectIntent = new Intent(MainActivity2.this, EditProjectActivity.class);
-                        editProjectIntent.putExtra("projectId", projectId);
-                        startActivity(editProjectIntent);
-                        //startActivityForResult(editProjectIntent, REQUEST_CODE);
-                    } else {
-                        Log.e("MainActivity2", "Invalid projectId: " + projectId);
-                    }
-                    return true;
-                case R.id.menu_export_project:
-                    // handles export project action
-                    // TODO: Implement the logic for exporting the project
-                    return true;
-                default:
-                    return super.onOptionsItemSelected(item);
+            // handles edit project action
+            if (item.getItemId() == R.id.menu_edit_project) {
+                if (projectId != -1) {
+                    Intent editProjectIntent = new Intent(MainActivity2.this, EditProjectActivity.class);
+                    editProjectIntent.putExtra("projectId", projectId);
+                    startActivity(editProjectIntent);
+                    //startActivityForResult(editProjectIntent, REQUEST_CODE);
+                } else {
+                    Log.e("MainActivity2", "Invalid projectId: " + projectId);
+                }
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        });
+    }
+
+    // method to show export dialog
+    private void showExportDialog() {
+        // Retrieve project details
+        String projectName = dbHelper.getProjectName(projectId);
+        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
+
+        // Set image count
+        int imageCount = imagePaths.size();
+
+        // Create the alert dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Export");
+        builder.setMessage(projectName + ".zip\n\nName                                       Type\n---------------------------------------------------------------\nclasses.txt                                  Plain Text\nimages                                              Folder\nlabels                                                 Folder\n---------------------------------------------------------------\nNo. of Images: " + imageCount);
+        builder.setPositiveButton("Export", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // Handle export button click
+                exportProject();
+                dialogInterface.dismiss();
             }
         });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // Handle cancel button click
+                dialogInterface.dismiss();
+            }
+        });
+
+        // Show the alert dialog
+        builder.show();
     }
 
     // Check if label names exist for the current project
@@ -203,8 +243,6 @@ public class MainActivity2 extends AppCompatActivity {
         });
         builder.show();
     }
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -275,7 +313,6 @@ public class MainActivity2 extends AppCompatActivity {
         }
         Uri resultUri = null;
 
-
         // if the user wants to select an image from their photo gallery
         if (requestCode == 10 && resultCode == RESULT_OK) {
             // retrieve the URI of the selected image
@@ -294,6 +331,7 @@ public class MainActivity2 extends AppCompatActivity {
             startCropActivity(getImageUri(this, bitmap));
 
         }
+
         // After the image is cropped
         else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
             // retrieve the result of the image cropping activity
@@ -306,7 +344,7 @@ public class MainActivity2 extends AppCompatActivity {
                     // Save the cropped image to a file and get the imageId
                     imageId = saveCroppedImageToFile(resultUri, projectId, selectedLabel, originalImagePath);
                     // Start ImageDetailsActivity
-                    openImageDetailsActivity(resultUri.toString());
+                    openImageDetailsActivity(resultUri.toString(),resultUri);
 
                 } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                     Exception error = result.getError();
@@ -329,7 +367,6 @@ public class MainActivity2 extends AppCompatActivity {
                 Log.d("MainActivity2", "ImageId: " + imageId + ", SelectedLabel: " + selectedLabel);
                 imageAdapter.setSelectedLabel(imageId, selectedLabel);
                 imageAdapter.notifyDataSetChanged();
-
             }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -386,7 +423,7 @@ public class MainActivity2 extends AppCompatActivity {
                 // Save the cropped image to a file in the cache directory
                 File cacheDir = getCacheDir();
                 String timestamp = String.valueOf(System.currentTimeMillis());
-                String filename = "cropped_" + timestamp + ".jpg";
+                String filename = "image_" + timestamp + ".jpg";
                 File imageFile = new File(cacheDir, filename);
 
                 FileOutputStream fos = new FileOutputStream(imageFile);
@@ -489,13 +526,14 @@ public class MainActivity2 extends AppCompatActivity {
     }
 
     // method to start the ImageDetailsActivity
-    private void openImageDetailsActivity(String imagePath) {
+    private void openImageDetailsActivity(String imagePath, Uri resultUri) {
         Log.d("MainActivity2", "Opening ImageDetailsActivity with Image Path: " + imagePath);
         Intent intent = new Intent(MainActivity2.this, ImageDetailsActivity.class);
         intent.putExtra("imagePath", imagePath);
         intent.putExtra("projectId", projectId);
         intent.putExtra("imageId", imageId);
         intent.putExtra("selectedLabel", selectedLabel);
+        intent.putExtra("imageUri", resultUri.toString());
         startActivityForResult(intent, REQUEST_IMAGE_DETAILS);
     }
 
@@ -615,6 +653,114 @@ public class MainActivity2 extends AppCompatActivity {
 
         // show the popup
         helpDialog.show();
+    }
+
+
+    private void exportProject() {
+        // Get project details
+        String projectName = dbHelper.getProjectName(projectId);
+        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
+        List<String> labelNames = dbHelper.getLabelsForProject(projectId);
+
+
+        // Create a zip file
+        File exportZipFile = new File(getExternalFilesDir(null), projectName + ".zip");
+
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportZipFile))) {
+            // Create 'labels' folder
+            zipOutputStream.putNextEntry(new ZipEntry("labels/"));
+            zipOutputStream.closeEntry();
+
+            // Create 'images' folder
+            zipOutputStream.putNextEntry(new ZipEntry("images/"));
+            zipOutputStream.closeEntry();
+
+            // Create 'classes.txt' file
+            zipOutputStream.putNextEntry(new ZipEntry("classes.txt"));
+
+            for (String label : labelNames) {
+                zipOutputStream.write((label + "\n").getBytes());
+            }
+            zipOutputStream.closeEntry();
+
+
+            // Process each image
+            for (String imagePath : imagePaths) {
+
+                String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
+                // Retrieve bounding box information from the database
+                float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+
+                // Write YOLO format label file
+                zipOutputStream.putNextEntry(new ZipEntry("labels/" + getFileNameWithoutExtension(imagePath)));
+                String labelData = String.format("%d %.6f %.6f %.6f %.6f",
+                        labelNames.indexOf(label), // Object class index
+                        (boundingBox[0] + boundingBox[2]) / 2, // x-center
+                        (boundingBox[1] + boundingBox[3]) / 2, // y-center
+                        (boundingBox[2] - boundingBox[0]),    // width
+                        (boundingBox[3] - boundingBox[1]));   // height
+                zipOutputStream.write(labelData.getBytes());
+                // zipOutputStream.closeEntry();
+
+                // Copy image file
+                zipOutputStream.putNextEntry(new ZipEntry("images/" + getFileNameWithoutExtension(imagePath)));
+                zipOutputStream.write(getFileBytes(new File(imagePath)));
+                zipOutputStream.closeEntry();
+            }
+
+            // Show a success message
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Project exported successfully", Toast.LENGTH_SHORT).show();
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Error exporting project", Toast.LENGTH_SHORT).show();
+            });
+        }
+        // Create a URI for the exported ZIP file
+        Uri uri = FileProvider.getUriForFile(this, "com.example.imagelabellingapp.fileprovider", exportZipFile);
+
+        // Create a sharing intent
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("application/zip");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+
+        // Check if there is any application that can handle the sharing intent
+        if (shareIntent.resolveActivity(getPackageManager()) != null) {
+            // Start the sharing activity
+            startActivity(Intent.createChooser(shareIntent, "Share via..."));
+        } else {
+            // Display a message that no app can handle the sharing intent
+            Toast.makeText(this, "No app can handle the sharing intent", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+    // Helper function to get file name without extension
+    private String getFileNameWithoutExtension(String filePath) {
+        File file = new File(filePath);
+        String fileName = file.getName();
+        int pos = fileName.lastIndexOf(".");
+        if (pos > 0 && pos < fileName.length() - 1) {
+            return fileName.substring(0, pos);
+        } else {
+            return fileName;
+        }
+    }
+
+    // Helper function to get file bytes
+    private byte[] getFileBytes(File file) {
+        try {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            byte[] bytes = new byte[(int) file.length()];
+            fileInputStream.read(bytes);
+            fileInputStream.close();
+            return bytes;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new byte[0];
+        }
     }
 
 }

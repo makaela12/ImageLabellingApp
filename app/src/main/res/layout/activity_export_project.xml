@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="0dp">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolBar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary" >
+        <ImageButton
+            android:id="@+id/helpButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:background="#00FFFFFF"
+            android:contentDescription="Help"
+            android:foregroundGravity="fill"
+            android:foregroundTint="#FBFBFB"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:tint="#00FFFFFF"/>
+    </androidx.appcompat.widget.Toolbar>
+
+
+    <TextView
+        android:id="@+id/textViewYolo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolBar"
+        android:layout_marginTop="14dp"
+        android:text="YOLOv4" />
+
+    <TextView
+        android:id="@+id/textViewImageCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolBar"
+        android:layout_marginTop="54dp"
+        android:text="Number of Images: " />
+
+    <TextView
+        android:id="@+id/textViewZipFileName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewImageCount"
+        android:layout_marginTop="20dp"
+        android:text="Zip File Name: " />
+
+    <TextView
+        android:id="@+id/textViewClasses"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewZipFileName"
+        android:layout_marginTop="10dp"
+        android:text="classes.txt" />
+
+    <ListView
+        android:id="@+id/viewClasses"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewClasses"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/textViewLabels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/viewClasses"
+        android:layout_marginTop="10dp"
+        android:text="/Labels" />
+
+    <ListView
+        android:id="@+id/viewLabels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewLabels"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/textViewImages"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/viewLabels"
+        android:layout_marginTop="10dp"
+        android:text="/Images" />
+
+    <ListView
+        android:id="@+id/viewImages"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textViewImages"
+        android:layout_marginTop="10dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/exportButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Export"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

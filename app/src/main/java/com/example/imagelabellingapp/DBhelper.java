@@ -11,12 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 class DBHelper extends SQLiteOpenHelper {
+
     private static final String DATABASE_NAME = "ImageLabelDB";
     private static final int DATABASE_VERSION = 2;
 
     // Table names
     public static final String TABLE_PROJECTS = "projects";
     public static final String TABLE_LABELS = "labels";
+
+    public static final String TABLE_BBOXES = "bboxes";
 
     // Common columns
     public static final String COLUMN_ID = "id";
@@ -38,6 +41,18 @@ class DBHelper extends SQLiteOpenHelper {
 
     // New column for storing selected label in the images table
     public static final String COLUMN_SELECTED_LABEL = "selected_label";
+
+
+    public static final String COLUMN_BBOX_ID = "bbox_id";
+    public static final String COLUMN_BBOX_X_MIN = "bbox_x_min";
+    public static final String COLUMN_BBOX_Y_MIN = "bbox_y_min";
+    public static final String COLUMN_BBOX_X_MAX = "bbox_x_max";
+    public static final String COLUMN_BBOX_Y_MAX = "bbox_y_max";
+
+    // New table for storing file information
+    public static final String TABLE_FILES = "files";
+    public static final String COLUMN_FILE_ID = "file_id";
+    public static final String COLUMN_FILENAME = "filename";
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -66,9 +81,29 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_ORIGINAL_IMAGE_PATH + " TEXT," +
                 COLUMN_SELECTED_LABEL + " TEXT);";
 
+        String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
+                COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                COLUMN_IMAGE_ID + " INTEGER," +
+                COLUMN_LABEL_NAME + " INTEGER," +
+                COLUMN_BBOX_X_MIN + " REAL," +
+                COLUMN_BBOX_Y_MIN + " REAL," +
+                COLUMN_BBOX_X_MAX + " REAL," +
+                COLUMN_BBOX_Y_MAX + " REAL," +
+                "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
+                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + "));";
+
+        // Create Files table
+        String createFilesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_FILES + " (" +
+                COLUMN_FILE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                COLUMN_IMAGE_ID + " INTEGER," +
+                COLUMN_FILENAME + " TEXT," +
+                "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + "));";
+
         db.execSQL(createImagesTableQuery);
         db.execSQL(createProjectsTableQuery);
         db.execSQL(createLabelsTableQuery);
+        db.execSQL(createBBoxesTableQuery);
+        db.execSQL(createFilesTableQuery);
     }
 
     // used to upgrade the database if needed
@@ -508,7 +543,116 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    public long insertBBoxInfo(long imageId, String label, float[] boundingBox) {
+        SQLiteDatabase db = this.getWritableDatabase();
 
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_IMAGE_ID, imageId);
+        values.put(COLUMN_LABEL_NAME, label);
+        values.put(COLUMN_BBOX_X_MIN, boundingBox[0]);
+        values.put(COLUMN_BBOX_Y_MIN, boundingBox[1]);
+        values.put(COLUMN_BBOX_X_MAX, boundingBox[2]);
+        values.put(COLUMN_BBOX_Y_MAX, boundingBox[3]);
+
+        // Insert the bounding box information into the bboxes table
+        long bboxId = db.insert(TABLE_BBOXES, null, values);
+
+        db.close();
+        return bboxId;
+    }
+
+    public Cursor getBoundingBoxForImage(long imageId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query to retrieve bounding box coordinates for the given image ID
+        String[] projection = {
+                COLUMN_BBOX_X_MIN,
+                COLUMN_BBOX_Y_MIN,
+                COLUMN_BBOX_X_MAX,
+                COLUMN_BBOX_Y_MAX
+        };
+
+        String selection = COLUMN_IMAGE_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId)};
+
+        return db.query(
+                TABLE_BBOXES,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+    }
+
+    // In your DBHelper class
+    public float[] getBoundingBoxForExport(long imageId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        float[] boundingBox = new float[4];
+
+        // TODO: Query the database to retrieve bounding box values based on the imageId
+        // Example query: "SELECT bbox_x_min, bbox_y_min, bbox_x_max, bbox_y_max FROM bboxes WHERE image_id = ?"
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_BBOX_X_MIN + ", " + COLUMN_BBOX_Y_MIN + ", " +
+                COLUMN_BBOX_X_MAX + ", " + COLUMN_BBOX_Y_MAX +
+                " FROM " + TABLE_BBOXES +
+                " WHERE " + COLUMN_IMAGE_ID + " = ?", new String[]{String.valueOf(imageId)});
+
+        if (cursor.moveToFirst()) {
+            boundingBox[0] = cursor.getFloat(0); // x_min
+            boundingBox[1] = cursor.getFloat(1); // y_min
+            boundingBox[2] = cursor.getFloat(2); // x_max
+            boundingBox[3] = cursor.getFloat(3); // y_max
+        }
+
+        cursor.close();
+        return boundingBox;
+    }
+
+    // Method to update bounding box coordinates in the database
+    public void updateBoundingBoxCoordinates(long imageId, float xMin, float yMin, float xMax, float yMax) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // Put the new bounding box coordinates in the ContentValues
+        values.put(COLUMN_BBOX_X_MIN, xMin);
+        values.put(COLUMN_BBOX_Y_MIN, yMin);
+        values.put(COLUMN_BBOX_X_MAX, xMax);
+        values.put(COLUMN_BBOX_Y_MAX, yMax);
+
+        // Update the database row for the specified imageId
+        db.update(TABLE_BBOXES, values, "image_id=?", new String[]{String.valueOf(imageId)});
+
+        // Close the database
+        db.close();
+    }
+
+    // Add a method to get file names for a specific project
+    public List<String> getImageFileNamesForProject(long projectId) {
+        List<String> fileNames = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+
+        // Query to retrieve file names for a specific project
+        String query = "SELECT " + COLUMN_FILENAME +
+                " FROM " + TABLE_FILES +
+                " INNER JOIN " + TABLE_IMAGES +
+                " ON " + TABLE_FILES + "." + COLUMN_IMAGE_ID + " = " + TABLE_IMAGES + "." + COLUMN_IMAGE_ID +
+                " WHERE " + TABLE_IMAGES + "." + COLUMN_PROJECT_ID + " = ?;";
+
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(projectId)});
+
+        // Iterate through the cursor and add file names to the list
+        while (cursor.moveToNext()) {
+            String fileName = cursor.getString(cursor.getColumnIndex(COLUMN_FILENAME));
+            fileNames.add(fileName);
+        }
+
+        // Close the cursor and database
+        cursor.close();
+        db.close();
+
+        return fileNames;
+    }
 
 }
 

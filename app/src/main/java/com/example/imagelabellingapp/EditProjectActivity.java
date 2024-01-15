@@ -185,9 +185,11 @@ public class EditProjectActivity extends AppCompatActivity {
                      Intent dataChangedIntent = new Intent("data_changed");
                      sendBroadcast(dataChangedIntent);
 
-                     finish();
+
+                    finish();
                 }
             }
+
         });
 
     }
@@ -341,8 +343,5 @@ public class EditProjectActivity extends AppCompatActivity {
 
         builder.show();
     }
-
-
-
 
 }

@@ -1,31 +1,45 @@
 package com.example.imagelabellingapp;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 public class ImageDetailsActivity extends AppCompatActivity {
 
 
-    private ImageView imageView;
+    //private ImageView imageView;
     private Spinner labelSpinner;
     private Button saveButton;
     private String imagePath;
     private long projectId;
     private String selectedLabel;
     private long imageId;
+    private BoundingBoxImageView imageView;
+    private float[] boundingBox = new float[4];
+
+    private ImageButton recropButton;
 
     DBHelper dbHelper;
 
@@ -37,13 +51,19 @@ public class ImageDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image_details);
 
         // Initialize UI elements
-        imageView = findViewById(R.id.imageView);
+        //imageView = findViewById(R.id.imageView);
         labelSpinner = findViewById(R.id.labelSpinner);
         saveButton = findViewById(R.id.saveButton);
+        imageView = findViewById(R.id.imageView);
         dbHelper = new DBHelper(this);
+        recropButton = findViewById(R.id.recropButton);
+
         // In ImageDetailsActivity onCreate
         int position = getIntent().getIntExtra("position", -1);
 
+        // Retrieve image URI from the intent
+        String imageUriString = getIntent().getStringExtra("imageUri");
+        Uri imageUri = Uri.parse(imageUriString);
 
         // Retrieve image path from the Intent
         imagePath = getIntent().getStringExtra("imagePath");
@@ -53,6 +73,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         imageId = getIntent().getLongExtra("imageId", -1);
         loadImageIntoImageView(imagePath);
 
+        recropButton.setOnClickListener(v -> recropImage(imageUri));
         // Set up label spinner
         loadLabels();
 
@@ -67,7 +88,30 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
         // Set click listener for the saveButton
         saveButton.setOnClickListener(v -> saveImageDetails());
+
+        // Set up touch listener for drawing bounding box on the image
+        imageView.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    // Handle touch down event
+                    boundingBox[0] = event.getX();
+                    boundingBox[1] = event.getY();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    // Handle touch move event
+                    boundingBox[2] = event.getX();
+                    boundingBox[3] = event.getY();
+                    imageView.drawBoundingBox(boundingBox);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    imageView.performClick();
+                    // Handle touch up event
+                    break;
+            }
+            return true;
+        });
     }
+
     private void loadImageIntoImageView(String imagePath) {
         // Remove the leading "/file:" from the imagePath
         if (imagePath.startsWith("file://")) {
@@ -115,17 +159,92 @@ public class ImageDetailsActivity extends AppCompatActivity {
         selectedLabel = labelSpinner.getSelectedItem().toString();
         Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
         dbHelper.updateLabelForImage(imageId, selectedLabel);
+        // Save bounding box information to the bboxes table
+        dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
 
-        // Prepare the result intent
+        dbHelper.getProjectName(projectId);
+
+        // Show a toast message indicating success
+        Toast.makeText(this, "Image labeled \"" + selectedLabel + "\" saved successfully to project \"" + dbHelper.getProjectName(projectId) + "\"", Toast.LENGTH_SHORT).show();
+
+        // Save and finish the activity
+        saveAndFinish();
+    }
+
+    private void saveAndFinish() {
+        // Set the result and toast message
         Intent resultIntent = new Intent();
         resultIntent.putExtra("selectedLabel", selectedLabel);
-        // Include the imageId in the result intent
         resultIntent.putExtra("imageId", imageId);
-
-        // Finish the activity and return to MainActivity2
         setResult(RESULT_OK, resultIntent);
+
+        // Finish the activity
         finish();
     }
 
+    private void recropImage(Uri imageUri) {
+        CropImage.activity(imageUri)
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .start(this);
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+
+            if (resultCode == RESULT_OK) {
+                // Get the cropped image URI
+                Uri croppedUri = result.getUri();
+
+                // Now you can use the croppedUri to get the Bitmap or perform any further operations
+                Bitmap croppedBitmap = null;
+                try {
+                    croppedBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), croppedUri);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Save the cropped image to a file in the cache directory
+                File cacheDir = getCacheDir();
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String filename = "image_" + timestamp + ".jpg";
+                File imageFile = new File(cacheDir, filename);
+
+                FileOutputStream fos = null;
+                try {
+                    fos = new FileOutputStream(imageFile);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                try {
+                    fos.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Set imagePath to the absolute path of the saved image
+                String imagePath = imageFile.getAbsolutePath();
+
+                //  imagePath to update the database
+                dbHelper.updateCroppedImagePath(imageId, imagePath);
+                // Reload the image into the ImageView
+                loadImageIntoImageView(imagePath);
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                // Handle cropping error
+                Exception error = result.getError();
+                error.printStackTrace();
+            }
+        }
+    }
 
 }
