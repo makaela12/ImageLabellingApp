@@ -24,12 +24,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImageDetailsActivity extends AppCompatActivity {
 
 
     //private ImageView imageView;
+    private List<String> boundingBoxLabels = new ArrayList<>();
     private Spinner labelSpinner;
     private Button saveButton;
     private String imagePath;
@@ -40,6 +42,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private float[] boundingBox = new float[4];
 
     private ImageButton recropButton;
+
+    private Button addButton, deleteButton;
 
     DBHelper dbHelper;
 
@@ -57,6 +61,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         dbHelper = new DBHelper(this);
         recropButton = findViewById(R.id.recropButton);
+        addButton = findViewById(R.id.addButton);
+        deleteButton = findViewById(R.id.deleteButton);
 
         // In ImageDetailsActivity onCreate
         int position = getIntent().getIntExtra("position", -1);
@@ -76,41 +82,96 @@ public class ImageDetailsActivity extends AppCompatActivity {
         recropButton.setOnClickListener(v -> recropImage(imageUri));
         // Set up label spinner
         loadLabels();
-
-        // Get the selected label from the intent
-        Intent intent = getIntent();
-        if (intent.hasExtra("selectedLabel")) {
-            selectedLabel = intent.getStringExtra("selectedLabel");
-            Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
-        } else {
-            Log.e("ImageDetailsActivity", "Selected label is null");
-        }
+        selectedLabel = labelSpinner.getSelectedItem().toString();
 
         // Set click listener for the saveButton
         saveButton.setOnClickListener(v -> saveImageDetails());
 
         // Set up touch listener for drawing bounding box on the image
         imageView.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    // Handle touch down event
-                    boundingBox[0] = event.getX();
-                    boundingBox[1] = event.getY();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    // Handle touch move event
-                    boundingBox[2] = event.getX();
-                    boundingBox[3] = event.getY();
-                    imageView.drawBoundingBox(boundingBox);
-                    break;
-                case MotionEvent.ACTION_UP:
-                    imageView.performClick();
-                    // Handle touch up event
-                    break;
+            if (labelSpinner.getSelectedItem() != null) {
+                String selectedLabel = labelSpinner.getSelectedItem().toString();
+                if (!imageView.hasBoundingBox() || imageView.isAllowTouch()) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            BoundingBox highlightedBoundingBox = imageView.getHighlightedBoundingBox(event.getX(), event.getY());
+                            if (highlightedBoundingBox != null) {
+                                // Highlight or perform delete action
+                                imageView.highlightBoundingBox(highlightedBoundingBox);
+                                return true;  // Consume the touch event
+                            } else {
+                                // Handle touch down event
+                                boundingBox = new float[4];
+                                boundingBox[0] = event.getX();
+                                boundingBox[1] = event.getY();
+                            }
+                            break;
+                        case MotionEvent.ACTION_MOVE:
+                            // Handle touch move event
+                                boundingBox[2] = event.getX();
+                                boundingBox[3] = event.getY();
+                                imageView.drawBoundingBox(boundingBox, selectedLabel);
+
+                            break;
+                        case MotionEvent.ACTION_UP:
+                                imageView.addBoundingBox(boundingBox, selectedLabel);
+                                // Disallow further touch events until "Add" button is pressed
+                                imageView.setAllowTouch(false);
+                                addButton.setEnabled(true);  // Enable the "Add" button
+                                imageView.performClick();
+                                // Handle touch up event
+
+                            break;
+                    }
+                    return true;
+                }
+            } else {
+                // Display a message to the user that a label must be selected
+                Toast.makeText(ImageDetailsActivity.this, "Select a label from the spinner first", Toast.LENGTH_SHORT).show();
             }
-            return true;
+            return false; // Ignore touch events
+        });
+
+        // In your ImageDetailsActivity, set up a click listener for the deleteButton
+        deleteButton.setOnClickListener(v -> {
+            // Delete the highlighted bounding box
+            imageView.deleteHighlightedBoundingBox();
+        });
+
+
+        // Set up click listener for the "Add" button
+        addButton.setOnClickListener(v -> {
+            // Disable the "Add" button until the user draws a new bounding box
+            addButton.setEnabled(false);
+
+            // Get the selected label from the spinner
+            String selectedLabel = labelSpinner.getSelectedItem().toString();
+
+            // Check if a bounding box has been drawn
+            if (imageView.hasBoundingBox()) {
+                // Get the coordinates of the bounding box
+                float[] boundingBox = imageView.getBoundingBox();
+
+                // Save bounding box information to the bboxes table
+                dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
+
+                // Add the bounding box to BoundingBoxImageView
+                imageView.addBoundingBox(boundingBox,selectedLabel);
+
+                // Optionally, clear the current bounding box
+                imageView.clearBoundingBox();
+
+                // Allow touch events on the image view
+                imageView.setAllowTouch(true);
+                } else {
+                     // Handle the case where no bounding box is drawn
+                     Toast.makeText(this, "Draw a bounding box first", Toast.LENGTH_SHORT).show();
+                }
+
         });
     }
+
+
 
     private void loadImageIntoImageView(String imagePath) {
         // Remove the leading "/file:" from the imagePath
@@ -160,7 +221,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
         dbHelper.updateLabelForImage(imageId, selectedLabel);
         // Save bounding box information to the bboxes table
-        dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
+        //dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
 
         dbHelper.getProjectName(projectId);
 

@@ -413,6 +413,60 @@ class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+    // Method to delete a bounding box from the database
+    public void deleteBoundingBox(BoundingBox boundingBox) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            String tableName = TABLE_BBOXES;
+            String idColumn = COLUMN_BBOX_ID;
+
+            // get the ID of the bounding box you want to delete
+            long boundingBoxId = getBoundingBoxId(db, tableName, idColumn, boundingBox);
+
+            // Delete the bounding box from the database
+            db.delete(tableName, idColumn + " = ?", new String[]{String.valueOf(boundingBoxId)});
+        } finally {
+            db.close(); // Close the database connection
+        }
+    }
+
+    // Helper method to get the ID of a bounding box
+    private long getBoundingBoxId(SQLiteDatabase db, String tableName, String idColumn, BoundingBox boundingBox) {
+        String[] projection = {idColumn};
+        String selection = COLUMN_BBOX_X_MIN + " = ? AND " +
+                COLUMN_BBOX_Y_MIN + " = ? AND " +
+                COLUMN_BBOX_X_MAX + " = ? AND " +
+                COLUMN_BBOX_Y_MAX + " = ?";
+        String[] selectionArgs = {
+                String.valueOf(boundingBox.getLeft()),
+                String.valueOf(boundingBox.getTop()),
+                String.valueOf(boundingBox.getRight()),
+                String.valueOf(boundingBox.getBottom())
+        };
+
+        Cursor cursor = db.query(
+                tableName,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        long boundingBoxId = -1;
+
+        try {
+            if (cursor.moveToFirst()) {
+                boundingBoxId = cursor.getLong(cursor.getColumnIndexOrThrow(idColumn));
+            }
+        } finally {
+            cursor.close(); // Close the cursor
+        }
+
+        return boundingBoxId;
+    }
+
     // Interface for the callback used in database transactions
     private interface TransactionCallback {
         void onTransaction(SQLiteDatabase db);

@@ -315,7 +315,7 @@ public class EditImage extends AppCompatActivity implements BoundingBoxImageView
            float[] boundingBox = {xMin, yMin, xMax, yMax};
 
             // Call drawBoundingBox on BoundingBoxImageView
-            imageView.drawBoundingBox(boundingBox);
+            //imageView.drawBoundingBox(boundingBox,newLabel);
         }
 
         if (cursor != null) {
