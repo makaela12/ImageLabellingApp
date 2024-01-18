@@ -540,11 +540,12 @@ public class MainActivity2 extends AppCompatActivity {
     // method to start the EditImage activity
     private void openEditImage(String imagePath, String originalImagePath) {
         Log.d("MainActivity2", "Opening EditImage activity with Image Path: " + imagePath);
-        Intent editImageIntent = new Intent(MainActivity2.this, EditImage.class);
+        Intent editImageIntent = new Intent(MainActivity2.this, EditImageActivity.class);
         editImageIntent.putExtra("imagePath", imagePath);
         editImageIntent.putExtra("originalImagePath", originalImagePath);
+        editImageIntent.putExtra("imageIdh", imageId);
         editImageIntent.putExtra("projectId", projectId);
-        editImageIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);  // Add this line
+        editImageIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(editImageIntent);
     }
 
@@ -605,7 +606,6 @@ public class MainActivity2 extends AppCompatActivity {
     private String getOriginalImagePath(String selectedImagePath) {
         // Use your DBHelper to query the original image path from the database
         String originalImagePath = dbHelper.getOriginalImagePath(selectedImagePath);
-
         return originalImagePath;
     }
 

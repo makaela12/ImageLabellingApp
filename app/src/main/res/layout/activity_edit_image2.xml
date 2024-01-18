@@ -70,7 +70,7 @@
 
     <Spinner
         android:id="@+id/labelSpinner"
-        android:layout_width="330dp"
+        android:layout_width="322dp"
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/rectangleBackground2"
         android:layout_alignEnd="@+id/rectangleBackground2"

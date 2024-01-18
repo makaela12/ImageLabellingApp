@@ -84,6 +84,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
         loadLabels();
         selectedLabel = labelSpinner.getSelectedItem().toString();
 
+        // Inside onCreate method
+        deleteButton.setOnClickListener(v -> deleteLastBoundingBox());
         // Set click listener for the saveButton
         saveButton.setOnClickListener(v -> saveImageDetails());
 
@@ -94,27 +96,22 @@ public class ImageDetailsActivity extends AppCompatActivity {
                 if (!imageView.hasBoundingBox() || imageView.isAllowTouch()) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
-                            BoundingBox highlightedBoundingBox = imageView.getHighlightedBoundingBox(event.getX(), event.getY());
-                            if (highlightedBoundingBox != null) {
-                                // Highlight or perform delete action
-                                imageView.highlightBoundingBox(highlightedBoundingBox);
-                                return true;  // Consume the touch event
-                            } else {
                                 // Handle touch down event
                                 boundingBox = new float[4];
                                 boundingBox[0] = event.getX();
                                 boundingBox[1] = event.getY();
-                            }
-                            break;
+                                break;
                         case MotionEvent.ACTION_MOVE:
                             // Handle touch move event
                                 boundingBox[2] = event.getX();
                                 boundingBox[3] = event.getY();
                                 imageView.drawBoundingBox(boundingBox, selectedLabel);
-
-                            break;
+                                break;
                         case MotionEvent.ACTION_UP:
                                 imageView.addBoundingBox(boundingBox, selectedLabel);
+                                // Add the corresponding label to the list
+                                boundingBoxLabels.add(selectedLabel);
+
                                 // Disallow further touch events until "Add" button is pressed
                                 imageView.setAllowTouch(false);
                                 addButton.setEnabled(true);  // Enable the "Add" button
@@ -132,11 +129,6 @@ public class ImageDetailsActivity extends AppCompatActivity {
             return false; // Ignore touch events
         });
 
-        // In your ImageDetailsActivity, set up a click listener for the deleteButton
-        deleteButton.setOnClickListener(v -> {
-            // Delete the highlighted bounding box
-            imageView.deleteHighlightedBoundingBox();
-        });
 
 
         // Set up click listener for the "Add" button
@@ -153,13 +145,11 @@ public class ImageDetailsActivity extends AppCompatActivity {
                 float[] boundingBox = imageView.getBoundingBox();
 
                 // Save bounding box information to the bboxes table
-                dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
+               // dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
 
                 // Add the bounding box to BoundingBoxImageView
-                imageView.addBoundingBox(boundingBox,selectedLabel);
+               // imageView.addBoundingBox(boundingBox,selectedLabel);
 
-                // Optionally, clear the current bounding box
-                imageView.clearBoundingBox();
 
                 // Allow touch events on the image view
                 imageView.setAllowTouch(true);
@@ -169,6 +159,15 @@ public class ImageDetailsActivity extends AppCompatActivity {
                 }
 
         });
+    }
+
+    private void deleteLastBoundingBox() {
+            // Remove the last drawn bounding box
+            imageView.removeLastBoundingBox();
+            // Enable the "Add" button
+            addButton.setEnabled(false);
+            imageView.setAllowTouch(true);
+
     }
 
 
@@ -220,13 +219,16 @@ public class ImageDetailsActivity extends AppCompatActivity {
         selectedLabel = labelSpinner.getSelectedItem().toString();
         Log.d("ImageDetailsActivity", "Selected label " + selectedLabel);
         dbHelper.updateLabelForImage(imageId, selectedLabel);
+
+        // Save all bounding boxes information to the bboxes table
+        dbHelper.insertBoundingBoxes(imageId,boundingBoxLabels, imageView.getBoundingBoxes());
         // Save bounding box information to the bboxes table
         //dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
 
         dbHelper.getProjectName(projectId);
 
         // Show a toast message indicating success
-        Toast.makeText(this, "Image labeled \"" + selectedLabel + "\" saved successfully to project \"" + dbHelper.getProjectName(projectId) + "\"", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "New image saved successfully to \"" + dbHelper.getProjectName(projectId) + "\"", Toast.LENGTH_SHORT).show();
 
         // Save and finish the activity
         saveAndFinish();

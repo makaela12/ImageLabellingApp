@@ -62,7 +62,10 @@ public class ImageAdapter extends ArrayAdapter<String> {
         String imagePath = getItem(position);
 
         // Get the label for the corresponding imageId from the database
-        String label = dbHelper.getCurrentLabelForImage(getImageIdFromPath(imagePath));
+        //String label = dbHelper.getCurrentLabelForImage(getImageIdFromPath(imagePath));
+        // Get the count of bounding boxes for the corresponding imageId from the database
+        long imageId = getImageIdFromPath(imagePath);
+        int bboxCount = dbHelper.getBBoxCountForImage(imageId);
 
         // Load image into ImageView using Glide
         Glide.with(context)
@@ -73,7 +76,12 @@ public class ImageAdapter extends ArrayAdapter<String> {
         Log.d("imageadapter AYOOOOOO", "Set selectedLabel for imageId " + imagePath + ": " + selectedLabel);
 
         // Set the label in the TextView
-        textView.setText(label);
+
+        String text = "No. of boxes: " + bboxCount;
+
+       // textView.setText(String.valueOf(bboxCount));
+        textView.setText(text);
+
 
         return view;
     }

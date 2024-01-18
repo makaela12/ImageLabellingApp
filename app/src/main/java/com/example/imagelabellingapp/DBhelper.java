@@ -467,6 +467,25 @@ class DBHelper extends SQLiteOpenHelper {
         return boundingBoxId;
     }
 
+    public int getBBoxCountForImage(long imageId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int count = 0;
+
+        try {
+            String query = "SELECT COUNT(*) FROM bboxes WHERE image_id = ?";
+            Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(imageId)});
+
+            if (cursor != null && cursor.moveToFirst()) {
+                count = cursor.getInt(0);
+                cursor.close();
+            }
+        } finally {
+            db.close();
+        }
+
+        return count;
+    }
+
     // Interface for the callback used in database transactions
     private interface TransactionCallback {
         void onTransaction(SQLiteDatabase db);
@@ -708,5 +727,148 @@ class DBHelper extends SQLiteOpenHelper {
         return fileNames;
     }
 
+    // Method to delete the last bounding box associated with the given imageId
+    public void deleteLastBoundingBox(long imageId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Query to delete the last bounding box entry for the given imageId
+        String deleteQuery = "DELETE FROM " + TABLE_BBOXES +
+                " WHERE " + COLUMN_IMAGE_ID + " = " + imageId +
+                " AND " + COLUMN_BBOX_ID + " IN (SELECT MAX(" + COLUMN_BBOX_ID + ") FROM " + TABLE_BBOXES +
+                " WHERE " + COLUMN_IMAGE_ID + " = " + imageId + ")";
+
+        db.execSQL(deleteQuery);
+
+        // Close the database connection
+        db.close();
+    }
+
+    // Method to insert all bounding boxes and their labels associated with an image into the database
+    public void insertBoundingBoxes(long imageId, List<String> labels, List<BoundingBox> boundingBoxes) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Iterate through each bounding box and label
+        for (int i = 0; i < boundingBoxes.size(); i++) {
+            BoundingBox boundingBox = boundingBoxes.get(i);
+            String label = labels.get(i);
+
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_IMAGE_ID, imageId);
+            values.put(COLUMN_LABEL_NAME, label);
+            values.put(COLUMN_BBOX_X_MIN, boundingBox.getLeft());
+            values.put(COLUMN_BBOX_Y_MIN, boundingBox.getTop());
+            values.put(COLUMN_BBOX_X_MAX, boundingBox.getRight());
+            values.put(COLUMN_BBOX_Y_MAX, boundingBox.getBottom());
+
+            // Insert the bounding box into the database
+            db.insert(TABLE_BBOXES, null, values);
+        }
+
+        // Close the database connection
+        db.close();
+    }
+
+    // Retrieve all bounding boxes associated with a specific image ID
+    public List<BoundingBox> getBoundingBoxesForImage(long imageId) {
+        List<BoundingBox> boundingBoxes = new ArrayList<>();
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] columns = {
+                COLUMN_BBOX_X_MIN,
+                COLUMN_BBOX_Y_MIN,
+                COLUMN_BBOX_X_MAX,
+                COLUMN_BBOX_Y_MAX,
+                COLUMN_LABEL_NAME
+        };
+        String selection = COLUMN_IMAGE_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId)};
+
+        Cursor cursor = db.query(TABLE_BBOXES, columns, selection, selectionArgs, null, null, null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                float xMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MIN));
+                float yMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MIN));
+                float xMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MAX));
+                float yMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MAX));
+                String label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
+                float[] coordinates = {xMin, yMin, xMax, yMax};
+
+                BoundingBox boundingBox = new BoundingBox(coordinates, label);
+                boundingBoxes.add(boundingBox);
+            }
+
+            cursor.close();
+        }
+
+        db.close();
+        return boundingBoxes;
+    }
+
+    // Update the bounding boxes for a specific image ID
+    public void updateBoundingBoxesForImage(long imageId, List<BoundingBox> boundingBoxes,List<String> labels) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Delete existing bounding boxes for the image
+        String whereClause = COLUMN_IMAGE_ID + " = ?";
+        String[] whereArgs = {String.valueOf(imageId)};
+        db.delete(TABLE_BBOXES, whereClause, whereArgs);
+
+        // Insert the updated bounding boxes
+        if (boundingBoxes != null && !boundingBoxes.isEmpty()) {
+            for (int i = 0; i < boundingBoxes.size(); i++) {
+                BoundingBox boundingBox = boundingBoxes.get(i);
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_IMAGE_ID, imageId);
+                values.put(COLUMN_BBOX_X_MIN, boundingBox.getLeft());
+                values.put(COLUMN_BBOX_Y_MIN, boundingBox.getTop());
+                values.put(COLUMN_BBOX_X_MAX, boundingBox.getRight());
+                values.put(COLUMN_BBOX_Y_MAX, boundingBox.getBottom());
+
+                // Check if the labels list is not empty and contains enough elements
+                if (labels != null && !labels.isEmpty() && i < labels.size()) {
+                    values.put(COLUMN_LABEL_NAME, labels.get(i));
+                } else {
+                    // Handle the case where labels are not provided for all bounding boxes
+                    // You might want to set a default label or log a message
+                }
+
+                db.insert(TABLE_BBOXES, null, values);
+            }
+        }
+
+        db.close();
+    }
+
+    public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COLUMN_IMAGE_ID, imageId);
+        values.put(COLUMN_BBOX_X_MIN, xMin);
+        values.put(COLUMN_BBOX_Y_MIN, yMin);
+        values.put(COLUMN_BBOX_X_MAX, xMax);
+        values.put(COLUMN_BBOX_Y_MAX, yMax);
+        values.put(COLUMN_LABEL_NAME, label);
+
+        long boundingBoxId = db.insert(TABLE_BBOXES, null, values);
+
+        db.close(); // Close the database connection
+
+        return boundingBoxId;
+    }
+
+    public void deleteBoundingBoxById(long boundingBoxId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String whereClause = COLUMN_BBOX_ID + " = ?";
+        String[] whereArgs = {String.valueOf(boundingBoxId)};
+        db.delete(TABLE_BBOXES, whereClause, whereArgs);
+        db.close();
+    }
+
+
 }
+
+
 

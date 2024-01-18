@@ -21,11 +21,6 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
     private DBHelper dbHelper;
 
-    // Flag to indicate whether the user is in highlight mode
-    private boolean highlightMode = false;
-
-    private BoundingBox highlightedBoundingBox;
-
 
     private boolean allowTouch = true;
 
@@ -69,10 +64,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
         super(context, attrs, defStyleAttr);
         init();
     }
-    // Setter method to toggle highlight mode
-    public void setHighlightMode(boolean highlightMode) {
-        this.highlightMode = highlightMode;
-    }
+
 
     // Method to set whether touch events are allowed
     public void setAllowTouch(boolean allowTouch) {
@@ -114,6 +106,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
     // method to draw the bounding box on the canvas.
     public void drawBoundingBox(float[] boundingBox, String label) {
+        Log.d("BoundingBoxIV", "drawBoundingBox: label:" + label);
         this.boundingBox = boundingBox;
         this.label = label;
         invalidate();
@@ -127,7 +120,9 @@ public class BoundingBoxImageView extends AppCompatImageView {
         for (BoundingBox boundingBox : boundingBoxes) {
             float[] coordinates = new float[]{boundingBox.getLeft(), boundingBox.getTop(), boundingBox.getRight(), boundingBox.getBottom()};
 
-            drawLabel(canvas,coordinates,boundingBox.getLabel(),boundingBox.isHighlighted());
+            String label = boundingBox.getLabel();
+            Log.d("BoundingBoxIV", "onDraw: label:" + label);
+            drawLabel(canvas,coordinates,label);
         }
 
     }
@@ -149,13 +144,6 @@ public class BoundingBoxImageView extends AppCompatImageView {
                 lastTouchY = event.getY();
                 isMoving = isTouchInsideBoundingBox(lastTouchX, lastTouchY);
                 isResizing = !isMoving && isTouchNearBoundingBox(lastTouchX, lastTouchY);
-                // Check if touch is inside any bounding box center
-                highlightedBoundingBox = getClickedBoundingBox(lastTouchX, lastTouchY);
-                if (highlightedBoundingBox != null) {
-                    // Highlight the bounding box (e.g., change its color)
-                    invalidate();
-                    return true;
-                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 // Handle touch move event
@@ -278,6 +266,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
     // Method to add a new bounding box with a specific color
     public void addBoundingBox(float[] coordinates,String label) {
+        Log.d("BoundingBoxIV", "addBoundingBox: label added:" + label);
         BoundingBox newBoundingBox = new BoundingBox(coordinates,label);
         boundingBoxes.add(newBoundingBox);
         Log.d("BoundingBoxIV", "addBoundingBox: number of bounding boxes =" +  boundingBoxes.size());
@@ -286,7 +275,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
 
     // Helper method to draw the label on the canvas
-    private void drawLabel(Canvas canvas,float[] coordinates, String label, Boolean highlighted) {
+    private void drawLabel(Canvas canvas,float[] coordinates, String label) {
         if (coordinates != null && coordinates.length == 4) {
             float left = coordinates[0];
             float top = coordinates[1];
@@ -307,7 +296,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
                 // Draw the bounding box
                 Paint paint = new Paint();
-                paint.setColor(highlighted ? Color.BLUE : Color.RED); // Change color if highlighted
+                textPaint.setColor(Color.RED);
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(5);
                 canvas.drawRect(left, top, right, bottom, paint);
@@ -315,58 +304,28 @@ public class BoundingBoxImageView extends AppCompatImageView {
         }
     }
 
-    // Add a method to get the clicked bounding box
-    private BoundingBox getClickedBoundingBox(float x, float y) {
-        for (BoundingBox boundingBox : boundingBoxes) {
-            float centerX = (boundingBox.getLeft() + boundingBox.getRight()) / 2;
-            float centerY = (boundingBox.getTop() + boundingBox.getBottom()) / 2;
-
-            // Define a click radius around the center
-            float clickRadius = 50; // Adjust as needed
-
-            // Check if the click is near the center of the bounding box
-            if (Math.abs(x - centerX) <= clickRadius && Math.abs(y - centerY) <= clickRadius) {
-                return boundingBox;
-            }
-        }
-        return null;
-    }
-
-    // Add a method to delete the highlighted bounding box
-    public void deleteHighlightedBoundingBox() {
-        if (highlightedBoundingBox != null) {
-            // Remove from the list
-            boundingBoxes.remove(highlightedBoundingBox);
-            // Remove from the database
-            dbHelper.deleteBoundingBox(highlightedBoundingBox); // You need to implement this method in your DBHelper
-            // Reset highlightedBoundingBox
-            highlightedBoundingBox = null;
-            // Redraw the view
-            invalidate();
+    // Inside BoundingBoxImageView class
+    public void removeLastBoundingBox() {
+        if (!boundingBoxes.isEmpty()) {
+            Log.d("BoundingBoxList", "Before Deletion: " + boundingBoxes);
+            boundingBoxes.remove(boundingBoxes.size()-1);
+            Log.d("BoundingBoxList", "After Deletion: " + boundingBoxes);
+            invalidate(); // Redraw the view after removing the bounding box
         }
     }
 
-    // Method to find the highlighted bounding box at a given touch location
-    BoundingBox getHighlightedBoundingBox(float x, float y) {
-        for (BoundingBox boundingBox : boundingBoxes) {
-            if (isTouchInsideBoundingBox(x, y, boundingBox)) {
-                return boundingBox;
-            }
-        }
-        return null;
+    public List<BoundingBox> getBoundingBoxes() {
+        return new ArrayList<>(boundingBoxes);
     }
 
-    // Method to check if the touch event is inside a bounding box
-    private boolean isTouchInsideBoundingBox(float x, float y, BoundingBox boundingBox) {
-        return x >= boundingBox.getLeft() && x <= boundingBox.getRight() &&
-                y >= boundingBox.getTop() && y <= boundingBox.getBottom();
+    public void setBoundingBoxes(List<BoundingBox> boundingBoxes) {
+        //this.boundingBoxes.clear();
+        //this.boundingBoxes.addAll(boundingBoxes);
+        //invalidate(); // Trigger a redraw
+        this.boundingBoxes = boundingBoxes;
+        invalidate(); // Redraw the canvas
     }
 
-    // Method to highlight a bounding box
-    public void highlightBoundingBox(BoundingBox boundingBox) {
-        boundingBox.setHighlighted(true);
-        invalidate(); // Redraw the view to reflect the highlighting change
-    }
 
 }
 
