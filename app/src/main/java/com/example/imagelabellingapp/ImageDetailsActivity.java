@@ -108,7 +108,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
                                 imageView.drawBoundingBox(boundingBox, selectedLabel);
                                 break;
                         case MotionEvent.ACTION_UP:
-                                imageView.addBoundingBox(boundingBox, selectedLabel);
+                                long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel);
+                                imageView.addBoundingBox(boundingBox, selectedLabel,bbox_id);
                                 // Add the corresponding label to the list
                                 boundingBoxLabels.add(selectedLabel);
 
@@ -130,7 +131,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         });
 
 
-
+/*
         // Set up click listener for the "Add" button
         addButton.setOnClickListener(v -> {
             // Disable the "Add" button until the user draws a new bounding box
@@ -158,7 +159,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
                      Toast.makeText(this, "Draw a bounding box first", Toast.LENGTH_SHORT).show();
                 }
 
-        });
+        });*/
     }
 
     private void deleteLastBoundingBox() {
@@ -221,7 +222,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         dbHelper.updateLabelForImage(imageId, selectedLabel);
 
         // Save all bounding boxes information to the bboxes table
-        dbHelper.insertBoundingBoxes(imageId,boundingBoxLabels, imageView.getBoundingBoxes());
+        //dbHelper.insertBoundingBoxes(imageId,boundingBoxLabels, imageView.getBoundingBoxes());
         // Save bounding box information to the bboxes table
         //dbHelper.insertBBoxInfo(imageId, selectedLabel, boundingBox);
 

@@ -19,6 +19,7 @@
         tools:targetApi="31">
         <activity
             android:name=".EditImageActivity"
+            android:label="Edit Image"
             android:exported="false" />
 
         <provider

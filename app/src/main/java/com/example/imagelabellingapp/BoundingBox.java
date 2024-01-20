@@ -11,9 +11,10 @@ public class BoundingBox {
 
 
 
-    public BoundingBox(float[] coordinates, String label) {
+    public BoundingBox(float[] coordinates, String label, long id) {
         this.coordinates = coordinates;
         this.label = label;
+        this.id = id;
 
 
     }

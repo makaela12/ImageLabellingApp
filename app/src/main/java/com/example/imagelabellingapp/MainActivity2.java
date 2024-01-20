@@ -484,6 +484,8 @@ public class MainActivity2 extends AppCompatActivity {
     private void startCropActivity(Uri sourceUri) {
         CropImage.activity(sourceUri)
                 .setGuidelines(CropImageView.Guidelines.ON)
+                // cropped image can only be saved to specific size of 313:267
+                .setAspectRatio(313,267)
                 .start(this);
     }
 

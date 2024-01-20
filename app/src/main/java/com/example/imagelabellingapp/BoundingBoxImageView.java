@@ -265,9 +265,10 @@ public class BoundingBoxImageView extends AppCompatImageView {
     }
 
     // Method to add a new bounding box with a specific color
-    public void addBoundingBox(float[] coordinates,String label) {
+    public void addBoundingBox(float[] coordinates,String label, long bbox_id) {
         Log.d("BoundingBoxIV", "addBoundingBox: label added:" + label);
-        BoundingBox newBoundingBox = new BoundingBox(coordinates,label);
+       // long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], label);
+        BoundingBox newBoundingBox = new BoundingBox(coordinates,label,bbox_id);
         boundingBoxes.add(newBoundingBox);
         Log.d("BoundingBoxIV", "addBoundingBox: number of bounding boxes =" +  boundingBoxes.size());
         invalidate(); // Redraw the view
@@ -287,18 +288,41 @@ public class BoundingBoxImageView extends AppCompatImageView {
             float y = top - 20; // Adjust the vertical position
 
             if (label != null) {
+
                 // Draw the label text
                 Paint textPaint = new Paint();
-                textPaint.setColor(Color.RED); // Set your desired color
-               // paint.setColor(highlighted ? Color.YELLOW : Color.RED); // Change color if highlighted
+                textPaint.setColor(Color.WHITE); // Set your desired color
+                // paint.setColor(highlighted ? Color.YELLOW : Color.RED); // Change color if highlighted
                 textPaint.setTextSize(30); // Set your desired text size
                 canvas.drawText(label, x, y, textPaint);
 
+                // Draw the background rectangle
+                Paint backgroundPaint = new Paint();
+                backgroundPaint.setColor(Color.RED); // Set your desired background color
+                float textWidth = textPaint.measureText(label);
+                float textHeight = 40;
+
+                // Adjust the rectangle position and size as needed
+                float rectLeft = x - 6;
+                float rectTop = y - textHeight;
+                float rectRight = x + textWidth + 8;
+                float rectBottom = y + 17;
+
+                canvas.drawRect(rectLeft, rectTop, rectRight, rectBottom, backgroundPaint);
+
+                // Draw the label text
+                Paint textPaint2 = new Paint();
+                textPaint2.setColor(Color.WHITE); // Set your desired color
+               // paint.setColor(highlighted ? Color.YELLOW : Color.RED); // Change color if highlighted
+                textPaint2.setTextSize(30); // Set your desired text size
+                canvas.drawText(label, x, y, textPaint2);
+
+
                 // Draw the bounding box
                 Paint paint = new Paint();
-                textPaint.setColor(Color.RED);
+                paint.setColor(Color.RED);
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(5);
+                paint.setStrokeWidth(8);
                 canvas.drawRect(left, top, right, bottom, paint);
             }
         }
@@ -311,6 +335,16 @@ public class BoundingBoxImageView extends AppCompatImageView {
             boundingBoxes.remove(boundingBoxes.size()-1);
             Log.d("BoundingBoxList", "After Deletion: " + boundingBoxes);
             invalidate(); // Redraw the view after removing the bounding box
+        }
+    }
+
+    // Method to get the coordinates of the last drawn bounding box
+    public float[] getLastBoundingBox() {
+        if (!boundingBoxes.isEmpty()) {
+            BoundingBox lastBoundingBox = boundingBoxes.get(boundingBoxes.size() - 1);
+            return new float[]{lastBoundingBox.getLeft(), lastBoundingBox.getTop(), lastBoundingBox.getRight(), lastBoundingBox.getBottom()};
+        } else {
+            return null; // Return null if there are no bounding boxes
         }
     }
 

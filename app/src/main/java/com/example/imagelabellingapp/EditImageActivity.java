@@ -29,7 +29,6 @@ public class EditImageActivity extends AppCompatActivity {
     private String selectedLabel;
     private float[] boundingBox = new float[4];
     private DBHelper dbHelper;
-    private boolean changesMade = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,11 +90,12 @@ public class EditImageActivity extends AppCompatActivity {
                             imageView.drawBoundingBox(boundingBox, selectedLabel);
                             break;
                         case MotionEvent.ACTION_UP:
-                            imageView.addBoundingBox(boundingBox, selectedLabel);
+                            long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel);
+                            imageView.addBoundingBox(boundingBox, selectedLabel, bbox_id);
                             // Add the corresponding label to the list
                             boundingBoxLabels.add(selectedLabel);
                             // Disallow further touch events until "Add" button is pressed
-                            imageView.setAllowTouch(false);
+                            //imageView.setAllowTouch(false);
                             addButton.setEnabled(true);  // Enable the "Add" button
                             imageView.performClick();
                             Log.d("EditImage", "CURRENT LABELS after adding boundingbox" + boundingBoxLabels);
@@ -113,7 +113,7 @@ public class EditImageActivity extends AppCompatActivity {
         });
 
 
-        // Set up click listener for the "Add" button
+      /*  // Set up click listener for the "Add" button
         addButton.setOnClickListener(v -> {
             // Disable the "Add" button until the user draws a new bounding box
             addButton.setEnabled(false);
@@ -142,7 +142,7 @@ public class EditImageActivity extends AppCompatActivity {
                 Toast.makeText(this, "Draw a bounding box first", Toast.LENGTH_SHORT).show();
             }
 
-        });
+        });*/
     }
 
     private void deleteLastBoundingBox() {
@@ -150,33 +150,22 @@ public class EditImageActivity extends AppCompatActivity {
         // Remove the last drawn bounding box
         Log.d("EditImageActivity", "exisiting boundingBOX u823y94 before delete" + existingBoundingBoxes);
         BoundingBox lastBoundingBox = existingBoundingBoxes.get(existingBoundingBoxes.size() - 1);
+
         long lastBoundingBoxId = lastBoundingBox.getId();
-        imageView.removeLastBoundingBox();
+        Log.d("Edit Image Activity", "deleteLastBoundingBox: lastBoundingBox = " + lastBoundingBoxId);
 
-
-        // Delete the bounding box from the database
         dbHelper.deleteBoundingBoxById(lastBoundingBoxId);
 
-        existingBoundingBoxes.remove(existingBoundingBoxes.size() - 1);
+        imageView.removeLastBoundingBox();
 
+        existingBoundingBoxes.remove(existingBoundingBoxes.size() - 1);
 
         // Remove the last label from the list
         if (!boundingBoxLabels.isEmpty()) {
             boundingBoxLabels.remove(boundingBoxLabels.size() - 1);
         }
-        // Enable the "Add" button
-        addButton.setEnabled(false);
-        imageView.setAllowTouch(true);
-        changesMade = true;
         Log.d("EditImageActivity", "exisiting boundingBOX u823y94 after delete" + existingBoundingBoxes);
 
-        // Delete the last bounding box from the database
-        /*if (!existingBoundingBoxes.isEmpty()) {
-            long lastBoundingBoxId = existingBoundingBoxes.get(existingBoundingBoxes.size() - 1).getId();
-            dbHelper.deleteLastBoundingBox(lastBoundingBoxId);
-            // Remove the last bounding box from the existingBoundingBoxes list
-            existingBoundingBoxes.remove(existingBoundingBoxes.size() - 1);
-        }*/
         Log.d("EditImage", "CURRENT LABELS after deletion" + boundingBoxLabels);
 
     }
@@ -224,17 +213,6 @@ public class EditImageActivity extends AppCompatActivity {
     }
 
     private void saveImageDetails() {
-        // Get the current list of bounding boxes from your BoundingBoxImageView
-        //List<BoundingBox> currentBoundingBoxes = imageView.getBoundingBoxes();
-       // Log.d("EditImage", "****!?!?loaded current bboxes " + currentBoundingBoxes);
-        Log.d("EditImage", "CURRENT LABELS " + boundingBoxLabels);
-
-        if (changesMade) {
-            //dbHelper.updateBoundingBoxesForImage(imageId, currentBoundingBoxes, boundingBoxLabels);
-            Toast.makeText(this, "Changes saved successfully", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "No changes made", Toast.LENGTH_SHORT).show();
-        }
         finish();
     }
 
