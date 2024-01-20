@@ -219,9 +219,9 @@ public class MainActivity2 extends AppCompatActivity {
             public void onClick(DialogInterface dialogInterface, int i) {
                 // Handle export button click based on the selected format
                 String selectedFormat = exportFormatSpinner.getSelectedItem().toString();
-                if ("YOLO".equals(selectedFormat)) {
+                if ("YOLO (You Only Look Once)".equals(selectedFormat)) {
                     exportProjectYOLO();
-                } else if ("COCO".equals(selectedFormat)) {
+                } else if ("COCO (Common Objects in Context)".equals(selectedFormat)) {
                     exportProjectCOCO();
                 }
                 dialogInterface.dismiss();
@@ -724,7 +724,7 @@ public class MainActivity2 extends AppCompatActivity {
 
             // Show a success message
             runOnUiThread(() -> {
-                Toast.makeText(this, "Project exported successfully", Toast.LENGTH_SHORT).show();
+               // Toast.makeText(this, "Project exported successfully", Toast.LENGTH_SHORT).show();
             });
 
         } catch (Exception e) {
@@ -833,7 +833,7 @@ public class MainActivity2 extends AppCompatActivity {
 
             // Show a success message
             runOnUiThread(() -> {
-                Toast.makeText(this, "Project exported in COCO format successfully", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "Project exported in COCO format successfully", Toast.LENGTH_SHORT).show();
             });
 
             // Create a URI for the exported JSON file
