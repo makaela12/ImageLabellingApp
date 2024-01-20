@@ -6,10 +6,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,9 +18,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,15 +36,21 @@ import androidx.core.content.FileProvider;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -182,6 +190,9 @@ public class MainActivity2 extends AppCompatActivity {
 
     // method to show export dialog
     private void showExportDialog() {
+        // Inflate the layout for the dialog
+        View dialogView = getLayoutInflater().inflate(R.layout.export_dialog, null);
+
         // Retrieve project details
         String projectName = dbHelper.getProjectName(projectId);
         List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
@@ -191,13 +202,28 @@ public class MainActivity2 extends AppCompatActivity {
 
         // Create the alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Export");
-        builder.setMessage(projectName + ".zip\n\nName                                       Type\n---------------------------------------------------------------\nclasses.txt                                  Plain Text\nimages                                              Folder\nlabels                                                 Folder\n---------------------------------------------------------------\nNo. of Images: " + imageCount);
+        builder.setTitle("Select Labelling Format");
+        builder.setView(dialogView);
+        //builder.setMessage(projectName + ".zip\n\nName                                       Type\n---------------------------------------------------------------\nclasses.txt                                  Plain Text\nimages                                              Folder\nlabels                                                 Folder\n---------------------------------------------------------------\nNo. of Images: " + imageCount);
+        builder.setMessage("Project Name: " + projectName + "\nNo. of Images: " + imageCount);
+        // Find the spinner in the dialog layout
+        Spinner exportFormatSpinner = dialogView.findViewById(R.id.exportFormatSpinner);
+
+        // Create an array adapter for the spinner with YOLO and COCO options
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"YOLO (You Only Look Once)", "COCO (Common Objects in Context)"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        exportFormatSpinner.setAdapter(adapter);
+
         builder.setPositiveButton("Export", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                // Handle export button click
-                exportProject();
+                // Handle export button click based on the selected format
+                String selectedFormat = exportFormatSpinner.getSelectedItem().toString();
+                if ("YOLO".equals(selectedFormat)) {
+                    exportProjectYOLO();
+                } else if ("COCO".equals(selectedFormat)) {
+                    exportProjectCOCO();
+                }
                 dialogInterface.dismiss();
             }
         });
@@ -252,20 +278,6 @@ public class MainActivity2 extends AppCompatActivity {
         return true;
     }
 
-    private Map<Long, String> getSavedLabels() {
-        Map<Long, String> savedLabels = new HashMap<>();
-        SharedPreferences preferences = getSharedPreferences("SelectedLabels", Context.MODE_PRIVATE);
-
-        // Iterate through the preferences and add to the map
-        Map<String, ?> allEntries = preferences.getAll();
-        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
-            long imageId = Long.parseLong(entry.getKey());
-            String label = (String) entry.getValue();
-            savedLabels.put(imageId, label);
-        }
-
-        return savedLabels;
-    }
 
     @Override
     protected void onDestroy() {
@@ -658,7 +670,7 @@ public class MainActivity2 extends AppCompatActivity {
     }
 
 
-    private void exportProject() {
+    private void exportProjectYOLO() {
         // Get project details
         String projectName = dbHelper.getProjectName(projectId);
         List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
@@ -739,6 +751,166 @@ public class MainActivity2 extends AppCompatActivity {
         }
 
     }
+    private void exportProjectCOCO() {
+        // Get project details
+        String projectName = dbHelper.getProjectName(projectId);
+        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
+        List<String> labelNames = dbHelper.getLabelsForProject(projectId);
+
+        try {
+
+            // Create COCO JSON structure
+            JSONObject cocoJson = new JSONObject();
+
+            // Create 'info' section
+            JSONObject info = new JSONObject();
+            info.put("description", "Your project description");
+            info.put("url", "Your project URL");
+            info.put("version", "1.0");
+            info.put("year", 2024);
+            info.put("contributor", "Your name or contributor");
+            info.put("date_created", getCurrentDate()); // Implement getCurrentDate() to get the current date
+            cocoJson.put("info", info);
+
+            // Create 'licenses' section (optional)
+            JSONArray licenses = new JSONArray();
+            // Add license information if needed
+            cocoJson.put("licenses", licenses);
+
+            // Create 'categories' section
+            JSONArray categories = new JSONArray();
+            for (int i = 0; i < labelNames.size(); i++) {
+                JSONObject category = new JSONObject();
+                category.put("id", i + 1); // IDs start from 1 in COCO format
+                category.put("name", labelNames.get(i));
+                category.put("supercategory", "object"); // You can customize this
+                categories.put(category);
+            }
+            cocoJson.put("categories", categories);
+
+            // Create 'images' section
+            JSONArray images = new JSONArray();
+            for (String imagePath : imagePaths) {
+                JSONObject image = new JSONObject();
+                image.put("id", images.length() + 1); // IDs start from 1 in COCO format
+                image.put("width", getImageWidth(imagePath)); // Implement getImageWidth() to get image width
+                image.put("height", getImageHeight(imagePath)); // Implement getImageHeight() to get image height
+                image.put("file_name", getFileNameWithoutExtension(imagePath));
+                images.put(image);
+            }
+            cocoJson.put("images", images);
+
+            // Create 'annotations' section
+            JSONArray annotations = new JSONArray();
+            for (String imagePath : imagePaths) {
+                String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
+                float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+
+                JSONObject annotation = new JSONObject();
+                annotation.put("id", annotations.length() + 1); // IDs start from 1 in COCO format
+                annotation.put("image_id", getImageId(imagePath, images));
+                annotation.put("category_id", labelNames.indexOf(label) + 1); // IDs start from 1 in COCO format
+                annotation.put("segmentation", new JSONArray()); // You can customize this
+                annotation.put("area", calculateArea(boundingBox));
+                annotation.put("bbox", new JSONArray(boundingBox)); // x, y, width, height
+                annotation.put("iscrowd", 0); // 0 for bounding boxes
+                annotations.put(annotation);
+            }
+            cocoJson.put("annotations", annotations);
+
+            // Save the JSON to a file
+            File exportJsonFile = new File(getExternalFilesDir(null), projectName + "_coco.json");
+            try (FileWriter fileWriter = new FileWriter(exportJsonFile)) {
+                fileWriter.write(cocoJson.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error exporting project in COCO format", Toast.LENGTH_SHORT).show();
+                });
+                return;
+            }
+
+
+            // Show a success message
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Project exported in COCO format successfully", Toast.LENGTH_SHORT).show();
+            });
+
+            // Create a URI for the exported JSON file
+            Uri uri = FileProvider.getUriForFile(this, "com.example.imagelabellingapp.fileprovider", exportJsonFile);
+
+            // Create a sharing intent
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            //shareIntent.setType("application/json");
+            // Change the intent type to "text/plain"
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+
+            // Check if there is any application that can handle the sharing intent
+            if (shareIntent.resolveActivity(getPackageManager()) != null) {
+                // Start the sharing activity
+                startActivity(Intent.createChooser(shareIntent, "Share via..."));
+            } else {
+                // Display a message that no app can handle the sharing intent
+                Toast.makeText(this, "No app can handle the sharing intent", Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Error exporting project in COCO format: JSON error", Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
+
+    // Helper method to get image width
+    private int getImageWidth(String imagePath) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(imagePath, options);
+        return options.outWidth;
+    }
+
+    // Helper method to get image height
+    private int getImageHeight(String imagePath) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(imagePath, options);
+        return options.outHeight;
+    }
+
+    // Helper method to get the current date
+    private String getCurrentDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+        return dateFormat.format(new Date());
+    }
+
+    // Helper method to calculate area from bounding box
+    private float calculateArea(float[] boundingBox) {
+        return (boundingBox[2] - boundingBox[0]) * (boundingBox[3] - boundingBox[1]);
+    }
+
+    // Helper method to get image ID from image path
+    private int getImageId(String imagePath, JSONArray images) {
+        try {
+            String fileName = getFileNameWithoutExtension(imagePath);
+            for (int i = 0; i < images.length(); i++) {
+                JSONObject image = images.getJSONObject(i);
+                if (image.getString("file_name").equals(fileName)) {
+                    return image.getInt("id");
+                }
+            }
+            return -1; // Image ID not found
+        } catch (JSONException e) {
+            e.printStackTrace();
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Error getting image ID: JSON error", Toast.LENGTH_SHORT).show();
+            });
+            return -1;
+        }
+    }
+
     // Helper function to get file name without extension
     private String getFileNameWithoutExtension(String filePath) {
         File file = new File(filePath);
