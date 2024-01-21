@@ -9,10 +9,17 @@
     android:foregroundTint="#00747474"
     tools:visibility="visible">
 
+
     <ImageButton
         android:id="@+id/recropButton"
-        android:layout_width="139dp"
-        android:layout_height="wrap_content"
+        android:layout_width="169dp"
+        android:layout_height="42dp"
+        android:layout_below="@id/rectangleBackground"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/edit"
+        android:backgroundTint="#EAEAEA"
         android:scaleType="fitStart"
         android:src="@android:drawable/ic_menu_crop"
         android:text="Recrop" />
@@ -21,10 +28,13 @@
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rectangleBackground"
+        android:layout_alignStart="@+id/recropButton"
+        android:layout_marginStart="51dp"
         android:layout_marginLeft="50dp"
+        android:layout_marginTop="4dp"
         android:paddingTop="16dp"
-        android:text="Resize" />
-
+        android:text="Resize Image" />
 
     <View
         android:id="@+id/rectangleBackground"
@@ -80,45 +90,48 @@
         android:elevation="8dp"
         android:minHeight="48dp" />
 
-    <Button
-        android:id="@+id/addButton"
-        android:layout_width="59dp"
-        android:layout_height="68dp"
-        android:layout_below="@id/rectangleBackground"
-        android:layout_alignParentEnd="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="118dp"
-        android:backgroundTint="#515050"
-        android:scaleType="centerInside"
-        android:src="@android:drawable/ic_input_add"
-        android:text="✓"
-        android:textSize="28sp"
-        app:cornerRadius="500dp"
-        tools:src="@android:drawable/ic_input_add" />
 
-    <Button
+    <ImageButton
         android:id="@+id/deleteButton"
-        android:layout_width="59dp"
-        android:layout_height="68dp"
+        android:layout_width="167dp"
+        android:layout_height="42dp"
         android:layout_below="@id/rectangleBackground"
-        android:layout_alignLeft="@id/addButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginLeft="-122dp"
-        android:layout_marginTop="12dp"
+        android:layout_alignLeft="@id/recropButton"
+        android:layout_marginLeft="185dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/edit"
+        android:backgroundTint="#EAEAEA"
+        android:clickable="true"
+        android:scaleType="fitStart"
+        android:src="@android:drawable/ic_menu_delete"
+        android:text="Recrop"
+        android:textSize="24sp"
+        app:cornerRadius="500dp" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="87dp"
+        android:layout_height="50dp"
+        android:layout_below="@id/rectangleBackground"
+        android:layout_alignLeft="@id/textView3"
+        android:layout_alignEnd="@+id/deleteButton"
+        android:layout_marginStart="71dp"
+        android:layout_marginLeft="189dp"
+        android:layout_marginTop="21dp"
+        android:layout_marginEnd="-15dp"
+        android:layout_toEndOf="@+id/recropButton"
         android:backgroundTint="#515050"
         android:scaleType="centerInside"
         android:src="@android:drawable/ic_input_add"
-        android:text="x"
-        android:textSize="24sp"
-        app:cornerRadius="500dp"
-        tools:src="@android:drawable/ic_input_add" />
+        android:text="Remove"
+        android:textSize="14sp"
+        app:cornerRadius="500dp" />
 
     <Button
         android:id="@+id/saveButton"
         android:layout_width="171dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/addButton"
+        android:layout_below="@+id/recropButton"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="23dp"
         android:background="@drawable/button_background"

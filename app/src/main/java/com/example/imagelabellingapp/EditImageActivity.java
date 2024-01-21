@@ -1,10 +1,13 @@
 package com.example.imagelabellingapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -12,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,6 +34,7 @@ public class EditImageActivity extends AppCompatActivity {
     private String selectedLabel;
     private float[] boundingBox = new float[4];
     private DBHelper dbHelper;
+    private ImageButton recropButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +47,7 @@ public class EditImageActivity extends AppCompatActivity {
         addButton = findViewById(R.id.addButton);
         deleteButton = findViewById(R.id.deleteButton);
         labelSpinner = findViewById(R.id.labelSpinner);
+        recropButton = findViewById(R.id.recropButton);
         dbHelper = new DBHelper(this);
 
         // Retrieve image details from the intent
@@ -49,19 +56,17 @@ public class EditImageActivity extends AppCompatActivity {
         imageId = dbHelper.getImageIdFromPath(imagePath);
         Log.d("EditImage", "Imageid " + imageId);
 
-
-
         // Load existing bounding boxes for the image
         List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);
         Log.d("EditImage", "loaded existing bboxes " + existingBoundingBoxes);
         Log.d("EditImage", "CURRENT LABELS ON CREATE" + boundingBoxLabels);
 
+        // Update label names in existing bounding boxes, incase any label names have been edited
+        updateBoundingBoxLabels(existingBoundingBoxes);
         imageView.setBoundingBoxes(existingBoundingBoxes);
         // Manually trigger a redraw of the BoundingBoxImageView
         imageView.invalidate();
-
         loadImageIntoImageView(imagePath);
-
         // Set up label spinner
         loadLabels();
         selectedLabel = labelSpinner.getSelectedItem().toString();
@@ -70,6 +75,10 @@ public class EditImageActivity extends AppCompatActivity {
         deleteButton.setOnClickListener(v -> deleteLastBoundingBox());
         // Set click listener for the saveButton
         saveButton.setOnClickListener(v -> saveImageDetails());
+
+        String og_image_path = dbHelper.getOriginalImagePath(imagePath);
+
+        recropButton.setOnClickListener(v -> startImageCropper(og_image_path));
 
         // Set up touch listener for drawing bounding box on the image
         imageView.setOnTouchListener((v, event) -> {
@@ -90,8 +99,11 @@ public class EditImageActivity extends AppCompatActivity {
                             imageView.drawBoundingBox(boundingBox, selectedLabel);
                             break;
                         case MotionEvent.ACTION_UP:
-                            long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel);
-                            imageView.addBoundingBox(boundingBox, selectedLabel, bbox_id);
+                            long lid = dbHelper.getLabelIdForProjectAndLabel(projectId,selectedLabel);
+                            Log.d("EditImage", "" + lid);
+                            long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel,projectId,lid);
+                            long label_id = dbHelper.getLabelIdForBoundingBox(selectedLabel,bbox_id);
+                            imageView.addBoundingBox(boundingBox, selectedLabel, bbox_id, label_id);
                             // Add the corresponding label to the list
                             boundingBoxLabels.add(selectedLabel);
                             // Disallow further touch events until "Add" button is pressed
@@ -112,37 +124,6 @@ public class EditImageActivity extends AppCompatActivity {
             return false; // Ignore touch events
         });
 
-
-      /*  // Set up click listener for the "Add" button
-        addButton.setOnClickListener(v -> {
-            // Disable the "Add" button until the user draws a new bounding box
-            addButton.setEnabled(false);
-
-            // Get the selected label from the spinner
-            String selectedLabel = labelSpinner.getSelectedItem().toString();
-
-            // Check if a bounding box has been drawn
-            if (imageView.hasBoundingBox()) {
-                // Get the coordinates of the bounding box
-                float[] boundingBox = imageView.getBoundingBox();
-                // Insert the bounding box into the database
-                long boundingBoxId = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel);
-
-                if (boundingBoxId != -1) {
-                    Toast.makeText(this, "Bounding box inserted successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Failed to insert bounding box", Toast.LENGTH_SHORT).show();
-                }
-
-                // Allow touch events on the image view
-                imageView.setAllowTouch(true);
-                changesMade = true;
-            } else {
-                // Handle the case where no bounding box is drawn
-                Toast.makeText(this, "Draw a bounding box first", Toast.LENGTH_SHORT).show();
-            }
-
-        });*/
     }
 
     private void deleteLastBoundingBox() {
@@ -192,10 +173,6 @@ public class EditImageActivity extends AppCompatActivity {
                     .skipMemoryCache(true)
                     .into(imageView);
         } else {
-            // Log an error or handle the missing file condition
-            Log.e("Glide", "File does not exist: " + imageFile.getAbsolutePath());
-            // You might want to set a placeholder image or handle the missing file condition in another way
-            // For now, we'll clear the ImageView
             imageView.setImageDrawable(null);
         }
     }
@@ -216,6 +193,38 @@ public class EditImageActivity extends AppCompatActivity {
         finish();
     }
 
+    private void startImageCropper(String imagePath) {
+        CropImage.activity(Uri.fromFile(new File(imagePath)))
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .start(this);
+    }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                // Update the image path with the cropped image
+                imagePath = result.getUri().getPath();
+                if (imagePath != null) {
+                    loadImageIntoImageView(imagePath);
+                }
+                // Clear existing bounding boxes as the image has changed
+                //imageView.clearBoundingBoxes();
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Exception error = result.getError();
+                Toast.makeText(this, "Error cropping image: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    // Method to update label names in existing bounding boxes
+    private void updateBoundingBoxLabels(List<BoundingBox> boundingBoxes) {
+        for (BoundingBox boundingBox : boundingBoxes) {
+            String updatedLabel = dbHelper.getLabelNameById(boundingBox.getLabelId());
+            boundingBox.setLabel(updatedLabel);
+        }
+    }
 
 }

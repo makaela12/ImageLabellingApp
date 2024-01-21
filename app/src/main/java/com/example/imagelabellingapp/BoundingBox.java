@@ -8,13 +8,16 @@ public class BoundingBox {
     private float right;
     private float bottom;
     private long id;
+    private long labelId;
 
 
 
-    public BoundingBox(float[] coordinates, String label, long id) {
+
+    public BoundingBox(float[] coordinates, String label, long id, long labelId) {
         this.coordinates = coordinates;
         this.label = label;
         this.id = id;
+        this.labelId = labelId;
 
 
     }
@@ -51,6 +54,10 @@ public class BoundingBox {
     }
     public long getId() {
         return id;
+    }
+
+    public long getLabelId() {
+        return labelId;
     }
 
 }

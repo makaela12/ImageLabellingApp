@@ -78,10 +78,9 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_IMAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 COLUMN_PROJECT_ID + " INTEGER," +
                 COLUMN_IMAGE_PATH + " TEXT," +
-                COLUMN_ORIGINAL_IMAGE_PATH + " TEXT," +
-                COLUMN_SELECTED_LABEL + " TEXT);";
+                COLUMN_ORIGINAL_IMAGE_PATH + " TEXT);";
 
-        String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
+       /*String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
                 COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 COLUMN_IMAGE_ID + " INTEGER," +
                 COLUMN_LABEL_NAME + " INTEGER," +
@@ -90,7 +89,22 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_BBOX_X_MAX + " REAL," +
                 COLUMN_BBOX_Y_MAX + " REAL," +
                 "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
-                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + "));";
+                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + "));";*/
+
+        String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
+                COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                COLUMN_PROJECT_ID + " INTEGER," +
+                COLUMN_IMAGE_ID + " INTEGER," +
+                COLUMN_LABEL_NAME + " INTEGER," +
+                COLUMN_ID + " INTEGER," +
+                COLUMN_BBOX_X_MIN + " REAL," +
+                COLUMN_BBOX_Y_MIN + " REAL," +
+                COLUMN_BBOX_X_MAX + " REAL," +
+                COLUMN_BBOX_Y_MAX + " REAL," +
+                "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
+                "FOREIGN KEY (" + COLUMN_ID + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_ID + ")," +
+                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + ")," +
+                "FOREIGN KEY (" + COLUMN_PROJECT_ID + ") REFERENCES " + TABLE_PROJECTS + "(" + COLUMN_ID + "));";
 
         // Create Files table
         String createFilesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_FILES + " (" +
@@ -125,39 +139,6 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    // used to save new label name selected for a cropped image
-    public void updateLabelForImage(long imageId, String selectedLabel) {
-
-        Log.d("DBHelperBLYYYYYYYSYSGHUWVHSWHWBSDHIW", "ImageID==" + imageId + "selectedlabel==" + selectedLabel );
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_SELECTED_LABEL, selectedLabel);
-
-        String selection = COLUMN_IMAGE_ID + " = ?";
-        String[] selectionArgs = {String.valueOf(imageId)};
-
-        db.update(TABLE_IMAGES, values, selection, selectionArgs);
-        db.close();
-    }
-
-
-    // used to save the label name selected for a cropped image
-    public void saveLabelForImage(long imageId, String selectedLabel) {
-            SQLiteDatabase db = this.getWritableDatabase();
-
-            ContentValues values = new ContentValues();
-            values.put(COLUMN_SELECTED_LABEL, selectedLabel);
-
-            String selection = COLUMN_IMAGE_ID + " = ?";
-            String[] selectionArgs = {String.valueOf(imageId)};
-
-            int rowsUpdated = db.update(TABLE_IMAGES, values, selection, selectionArgs);
-            db.close();
-
-            Log.d("DBHelper", "Rows updated for ImageId " + imageId + ": " + rowsUpdated);
-
-    }
 
     // used to delete labels associated to a project_id the user wants to delete
     public void deleteLabelsForProject(long projectId) {
@@ -367,7 +348,27 @@ class DBHelper extends SQLiteOpenHelper {
 
         return originalImagePath;
     }
-    // Method to get the count of images associated with a label in the images table
+    // Method to get the count of bounding boxes associated with a label in the bboxes table
+    public int getImageCountForLabel(long projectId, String labelName) {
+        int count = 0;
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query to retrieve the count of bounding boxes associated with the label
+        String query = "SELECT COUNT(*) FROM " + TABLE_BBOXES +
+                " WHERE " + COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId), labelName};
+
+        Cursor cursor = db.rawQuery(query, selectionArgs);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+            cursor.close();
+        }
+
+        return count;
+    }
+
+    /*// Method to get the count of images associated with a label in the images table
     public int getImageCountForLabel(long projectId, String labelName) {
         int count = 0;
         SQLiteDatabase db = this.getReadableDatabase();
@@ -385,9 +386,9 @@ class DBHelper extends SQLiteOpenHelper {
         }
 
         return count;
-    }
+    }*/
 
-    // New method to delete label and associated images
+   /* // New method to delete label and associated images
     public void deleteLabelAndImages(final long projectId, final String label) {
         performTransaction(new TransactionCallback() {
             @Override
@@ -401,6 +402,52 @@ class DBHelper extends SQLiteOpenHelper {
                         new String[]{String.valueOf(projectId), label});
             }
         });
+    }*/
+    // New method to delete label and associated images
+    public void deleteLabelAndImages(final long projectId, final String label) {
+        performTransaction(new TransactionCallback() {
+            @Override
+            public void onTransaction(SQLiteDatabase db) {
+
+
+                // Get image IDs associated with the label in the bboxes table
+                List<Long> imageIds = getImageIdsForLabelInBboxes(db, projectId, label);
+
+                // Delete label
+                db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
+                        new String[]{String.valueOf(projectId), label});
+
+                // Delete label and associated images in the bboxes table
+                db.delete(TABLE_BBOXES, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
+                        new String[]{String.valueOf(projectId), label});
+
+                // Delete associated images in the images table
+                for (Long imageId : imageIds) {
+                    db.delete(TABLE_IMAGES, COLUMN_IMAGE_ID + " = ?",
+                            new String[]{String.valueOf(imageId)});
+                }
+            }
+        });
+    }
+
+    // Helper method to get image IDs associated with a label in the bboxes table
+    private List<Long> getImageIdsForLabelInBboxes(SQLiteDatabase db, long projectId, String label) {
+        List<Long> imageIds = new ArrayList<>();
+        String query = "SELECT DISTINCT " + COLUMN_IMAGE_ID + " FROM " + TABLE_BBOXES +
+                " WHERE " + COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId), label};
+
+        Cursor cursor = db.rawQuery(query, selectionArgs);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                long imageId = cursor.getLong(cursor.getColumnIndex(COLUMN_IMAGE_ID));
+                imageIds.add(imageId);
+            }
+            cursor.close();
+        }
+
+        return imageIds;
     }
     // Helper method to perform database transactions
     private void performTransaction(TransactionCallback callback) {
@@ -548,35 +595,6 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public String getCurrentLabelForImage(long imageId) {
-        String currentLabel = null;
-        SQLiteDatabase db = getReadableDatabase();
-
-        // Query to retrieve the label_name for the given imageId
-        String[] projection = {COLUMN_SELECTED_LABEL};
-        String selection = COLUMN_IMAGE_ID + " = ?";
-        String[] selectionArgs = {String.valueOf(imageId)};
-
-        Cursor cursor = db.query(
-                TABLE_IMAGES,
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null
-        );
-
-        // Process the cursor and retrieve the label_name
-        if (cursor != null && cursor.moveToFirst()) {
-            currentLabel = cursor.getString(cursor.getColumnIndex(COLUMN_SELECTED_LABEL));
-            cursor.close();
-        }
-
-        Log.d("DBHelper",  "******current label for image =" + currentLabel);
-        return currentLabel;
-    }
-
 
     // Method to update a label in the database when a user wants to edit the label name
     public void updateLabel(long projectId, String oldLabel, String newLabel) {
@@ -610,23 +628,6 @@ class DBHelper extends SQLiteOpenHelper {
         // close the database
         db.close();
     }
-
-    public void updateSelectedLabelInImages(long projectId, String oldLabel, String newLabel) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_SELECTED_LABEL, newLabel);
-
-        // Specify the WHERE clause to identify the rows to be updated
-        String whereClause = COLUMN_PROJECT_ID + " = ? AND " + COLUMN_SELECTED_LABEL + " = ?";
-        String[] whereArgs = {String.valueOf(projectId), oldLabel};
-
-        // Perform the update
-        db.update(TABLE_IMAGES, values, whereClause, whereArgs);
-
-        db.close();
-    }
-
 
     public Cursor getBoundingBoxForImage(long imageId) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -727,6 +728,56 @@ class DBHelper extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getReadableDatabase();
 
+        // Define the columns to retrieve from both tables
+        String[] columns = {
+                TABLE_BBOXES + "." + COLUMN_BBOX_ID,
+                COLUMN_BBOX_X_MIN,
+                COLUMN_BBOX_Y_MIN,
+                COLUMN_BBOX_X_MAX,
+                COLUMN_BBOX_Y_MAX,
+                TABLE_BBOXES + "." + COLUMN_LABEL_NAME,
+                TABLE_LABELS + "." + COLUMN_ID  // Add the label_id column from the labels table
+        };
+
+        // Define the tables to join and the join condition
+        String tables = TABLE_BBOXES +
+                " LEFT JOIN " + TABLE_LABELS +
+                " ON " + TABLE_BBOXES + "." + COLUMN_LABEL_NAME + " = " + TABLE_LABELS + "." + COLUMN_LABEL_NAME;
+
+        String selection = TABLE_BBOXES + "." + COLUMN_IMAGE_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId)};
+
+        Cursor cursor = db.query(tables, columns, selection, selectionArgs, null, null, null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                long id = cursor.getLong(cursor.getColumnIndex(COLUMN_BBOX_ID));
+                float xMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MIN));
+                float yMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MIN));
+                float xMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MAX));
+                float yMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MAX));
+                String label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
+                long labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID));
+
+                float[] coordinates = {xMin, yMin, xMax, yMax};
+
+                BoundingBox boundingBox = new BoundingBox(coordinates, label, id, labelId);
+                boundingBoxes.add(boundingBox);
+            }
+
+            cursor.close();
+        }
+
+        db.close();
+        return boundingBoxes;
+    }
+
+    // Retrieve all bounding boxes associated with a specific image ID
+    /*public List<BoundingBox> getBoundingBoxesForImage(long imageId) {
+        List<BoundingBox> boundingBoxes = new ArrayList<>();
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
         String[] columns = {
                 COLUMN_BBOX_ID,
                 COLUMN_BBOX_X_MIN,
@@ -750,7 +801,7 @@ class DBHelper extends SQLiteOpenHelper {
                 String label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
                 float[] coordinates = {xMin, yMin, xMax, yMax};
 
-                BoundingBox boundingBox = new BoundingBox(coordinates,label,id);
+                BoundingBox boundingBox = new BoundingBox(coordinates,label,id, );
                 boundingBoxes.add(boundingBox);
             }
 
@@ -759,10 +810,10 @@ class DBHelper extends SQLiteOpenHelper {
 
         db.close();
         return boundingBoxes;
-    }
+    }*/
 
 
-    public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label) {
+    /*public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
@@ -778,6 +829,24 @@ class DBHelper extends SQLiteOpenHelper {
         db.close(); // Close the database connection
 
         return boundingBoxId;
+    }*/
+    public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label, long projectId, long label_id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_IMAGE_ID, imageId);
+        values.put(COLUMN_BBOX_X_MIN, xMin);
+        values.put(COLUMN_BBOX_Y_MIN, yMin);
+        values.put(COLUMN_BBOX_X_MAX, xMax);
+        values.put(COLUMN_BBOX_Y_MAX, yMax);
+        values.put(COLUMN_LABEL_NAME, label);
+        values.put(COLUMN_PROJECT_ID, projectId);
+        values.put(COLUMN_ID, label_id);
+
+        long bbox_id = db.insert(TABLE_BBOXES, null, values);
+        db.close();
+
+        return bbox_id;
     }
 
     public void deleteBoundingBoxById(long boundingBoxId) {
@@ -787,6 +856,145 @@ class DBHelper extends SQLiteOpenHelper {
         db.delete(TABLE_BBOXES, whereClause, whereArgs);
         db.close();
     }
+
+    public void updateBoundingBoxLabel(long projectId, String currentLabelName, String newLabelName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_LABEL_NAME, newLabelName);
+
+        String whereClause = COLUMN_LABEL_NAME + " = ? AND " + COLUMN_PROJECT_ID + " = ?";
+        String[] whereArgs = {currentLabelName, String.valueOf(projectId)};
+
+        db.update(TABLE_BBOXES, values, whereClause, whereArgs);
+        db.close();
+    }
+
+    // Method to get label name based on label ID
+    public String getLabelNameById(long labelId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String labelName = null;
+
+        Cursor cursor = db.query(TABLE_LABELS,
+                new String[]{COLUMN_LABEL_NAME},
+                COLUMN_ID + " = ?",
+                new String[]{String.valueOf(labelId)},
+                null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            labelName = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
+            cursor.close();
+        }
+
+        db.close();
+        return labelName;
+    }
+
+    public long getLabelIdForBoundingBox(String labelName, long bboxId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        long labelId = -1;  // Default value if not found
+
+        // Assuming "bboxes" table has columns "bbox_id" and "label_id"
+        String[] bboxColumns = {COLUMN_ID};  // Replace with your actual column names
+        String bboxSelection = COLUMN_BBOX_ID + " = ?";
+        String[] bboxSelectionArgs = {String.valueOf(bboxId)};
+
+        // Query to get label_id from bboxes table using bbox_id
+        Cursor bboxCursor = db.query(TABLE_BBOXES, bboxColumns, bboxSelection, bboxSelectionArgs, null, null, null);
+
+        if (bboxCursor != null && bboxCursor.moveToFirst()) {
+            // Retrieve label_id from the cursor
+            labelId = bboxCursor.getLong(bboxCursor.getColumnIndexOrThrow(COLUMN_ID));
+        }
+
+        if (bboxCursor != null) {
+            bboxCursor.close();
+        }
+
+        return labelId;
+    }
+
+   /* public long getLabelIdForBoundingBox(String labelName, long bboxId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        long labelId = -1;  // Default value if not found
+
+        // Assuming "labels" table has columns "label_id" and "label_name"
+        String[] labelColumns = {COLUMN_ID};  // Replace with your actual column names
+        String labelSelection = COLUMN_LABEL_NAME + " = ?";
+        String[] labelSelectionArgs = {labelName};
+
+        // Query to get label_id from labels table
+        Cursor labelCursor = db.query(TABLE_LABELS, labelColumns, labelSelection, labelSelectionArgs, null, null, null);
+
+        if (labelCursor != null && labelCursor.moveToFirst()) {
+            // Assuming "bboxes" table has columns "bbox_id" and "label_id"
+            String[] bboxColumns = {COLUMN_ID};  // Replace with your actual column names
+            String bboxSelection = COLUMN_BBOX_ID + " = ?";
+            String[] bboxSelectionArgs = {String.valueOf(bboxId)};
+
+            // Query to get label_id from bboxes table using bbox_id
+            Cursor bboxCursor = db.query(TABLE_BBOXES, bboxColumns, bboxSelection, bboxSelectionArgs, null, null, null);
+
+            if (bboxCursor != null && bboxCursor.moveToFirst()) {
+                // Retrieve label_id from the cursor
+                labelId = bboxCursor.getLong(bboxCursor.getColumnIndexOrThrow(COLUMN_ID));
+            }
+
+            if (bboxCursor != null) {
+                bboxCursor.close();
+            }
+        }
+
+        if (labelCursor != null) {
+            labelCursor.close();
+        }
+
+        return labelId;
+    }*/
+
+    public long getLabelIdForProjectAndLabel(long projectId, String labelName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] columns = {COLUMN_ID};
+        String selection = COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId), labelName};
+
+        Cursor cursor = db.query(TABLE_LABELS, columns, selection, selectionArgs, null, null, null);
+
+        long labelId = -1;  // Default value if not found
+
+        if (cursor != null && cursor.moveToFirst()) {
+            labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID));
+            cursor.close();
+        }
+
+        db.close();
+        return labelId;
+    }
+
+    public String getLabelNameForBoundingBox(long imageId, float left, float top, float right, float bottom) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String labelName = null;
+
+        String[] columns = {COLUMN_LABEL_NAME};
+        String selection = COLUMN_IMAGE_ID + " = ? AND " +
+                COLUMN_BBOX_X_MIN + " = ? AND " +
+                COLUMN_BBOX_Y_MIN + " = ? AND " +
+                COLUMN_BBOX_X_MAX + " = ? AND " +
+                COLUMN_BBOX_Y_MAX + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId), String.valueOf(left), String.valueOf(top), String.valueOf(right), String.valueOf(bottom)};
+
+        Cursor cursor = db.query(TABLE_BBOXES, columns, selection, selectionArgs, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            labelName = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
+            cursor.close();
+        }
+
+        db.close();
+        return labelName;
+    }
+
+
 
 }
 

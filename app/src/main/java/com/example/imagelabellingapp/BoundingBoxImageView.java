@@ -265,10 +265,10 @@ public class BoundingBoxImageView extends AppCompatImageView {
     }
 
     // Method to add a new bounding box with a specific color
-    public void addBoundingBox(float[] coordinates,String label, long bbox_id) {
+    public void addBoundingBox(float[] coordinates, String label, long bbox_id, long label_id) {
         Log.d("BoundingBoxIV", "addBoundingBox: label added:" + label);
        // long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], label);
-        BoundingBox newBoundingBox = new BoundingBox(coordinates,label,bbox_id);
+        BoundingBox newBoundingBox = new BoundingBox(coordinates,label,bbox_id, label_id);
         boundingBoxes.add(newBoundingBox);
         Log.d("BoundingBoxIV", "addBoundingBox: number of bounding boxes =" +  boundingBoxes.size());
         invalidate(); // Redraw the view
@@ -358,6 +358,12 @@ public class BoundingBoxImageView extends AppCompatImageView {
         //invalidate(); // Trigger a redraw
         this.boundingBoxes = boundingBoxes;
         invalidate(); // Redraw the canvas
+    }
+
+    // Clear existing bounding boxes
+    public void clearBoundingBoxes() {
+        boundingBoxes.clear();
+        invalidate(); // Trigger a redraw
     }
 
 

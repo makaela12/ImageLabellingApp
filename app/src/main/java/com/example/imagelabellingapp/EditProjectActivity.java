@@ -237,7 +237,7 @@ public class EditProjectActivity extends AppCompatActivity {
 
         // set project name and labels to the views
         projName.setText(projectName);
-        Log.d("EditProjectActivity", "Loaded project details. ProjectName: " + projectName);
+        Log.d("EditProjectActivity", "Loaded project details BEFORE. ProjectName: " + projectName);
         if (labels != null) {
             Log.d("EditProjectActivity", "Loaded project details. Labels: " + labels.toString());
         } else {
@@ -320,8 +320,7 @@ public class EditProjectActivity extends AppCompatActivity {
                 editedLabel = input.getText().toString().trim();
                 if (!editedLabel.isEmpty()) {
                     dbHelper.updateLabel(projectId, label, editedLabel);
-                    // Update the selected_label in the images table
-                    dbHelper.updateSelectedLabelInImages(projectId, label, editedLabel);
+                    dbHelper.updateBoundingBoxLabel(projectId,label,editedLabel);
                     // Reload project details after updating the label
                     loadProjectDetails(projectId);
                     // Notify MainActivity2 about the label change

@@ -450,9 +450,6 @@ public class MainActivity2 extends AppCompatActivity {
 
                 Log.e("CORRECT IMAGEID?????", "Invalid projectId: " + imageId);
 
-                // Save the label associated with the imageId
-                dbHelper.saveLabelForImage(imageId, selectedLabel);
-
                 // Notify that a new image has been saved
                 sendBroadcast(new Intent("new_image_saved"));
 
@@ -701,9 +698,13 @@ public class MainActivity2 extends AppCompatActivity {
             // Process each image
             for (String imagePath : imagePaths) {
 
-                String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
+                //String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
                 // Retrieve bounding box information from the database
+                //float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+
                 float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+                long i_id = dbHelper.getImageIdFromPath(imagePath);
+                String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
 
                 // Write YOLO format label file
                 zipOutputStream.putNextEntry(new ZipEntry("labels/" + getFileNameWithoutExtension(imagePath)));
@@ -803,8 +804,11 @@ public class MainActivity2 extends AppCompatActivity {
             // Create 'annotations' section
             JSONArray annotations = new JSONArray();
             for (String imagePath : imagePaths) {
-                String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
+               // String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
+                //float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
                 float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+                long i_id = dbHelper.getImageIdFromPath(imagePath);
+                String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
 
                 JSONObject annotation = new JSONObject();
                 annotation.put("id", annotations.length() + 1); // IDs start from 1 in COCO format

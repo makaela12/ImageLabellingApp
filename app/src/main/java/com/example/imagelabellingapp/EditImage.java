@@ -93,9 +93,6 @@ public class EditImage extends AppCompatActivity implements BoundingBoxImageView
         labelSpinner.setAdapter(labelAdapter);
 
         // Set the selected label for the current image
-        String currentLabel = dbHelper.getCurrentLabelForImage(imageId);
-        int selectedLabelPosition = labels.indexOf(currentLabel);
-        labelSpinner.setSelection(selectedLabelPosition);
 
         // Load the cropped image into the ImageView
         loadImageIntoImageView(imagePath);
@@ -115,7 +112,6 @@ public class EditImage extends AppCompatActivity implements BoundingBoxImageView
             Log.d("EditImage", "New label = " + newLabel);
 
             // Update the label_name in the database for the current image
-            dbHelper.updateLabelForImage(imageId, newLabel); // Implement this method in your DBHelper
 
             // Save the final bounding box coordinates
             if (imageView != null) {

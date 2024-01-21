@@ -165,10 +165,10 @@ public class ExportProjectActivity extends AppCompatActivity {
 
             // Process each image
             for (String imagePath : imagePaths) {
-
-                String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
                 // Retrieve bounding box information from the database
                 float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
+                long i_id = dbHelper.getImageIdFromPath(imagePath);
+                String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
 
                 // Write YOLO format label file
                 zipOutputStream.putNextEntry(new ZipEntry("labels/" + getFileNameWithoutExtension(imagePath)));
