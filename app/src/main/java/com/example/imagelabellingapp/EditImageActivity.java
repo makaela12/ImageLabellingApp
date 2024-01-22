@@ -26,7 +26,7 @@ public class EditImageActivity extends AppCompatActivity {
     private List<String> boundingBoxLabels = new ArrayList<>();
 
     private BoundingBoxImageView imageView;
-    private Button saveButton, addButton, deleteButton;
+    private Button saveButton;
     private long imageId;
     private Spinner labelSpinner;
     private long projectId;
@@ -34,7 +34,7 @@ public class EditImageActivity extends AppCompatActivity {
     private String selectedLabel;
     private float[] boundingBox = new float[4];
     private DBHelper dbHelper;
-    private ImageButton recropButton;
+    private ImageButton recropButton, deleteButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +44,6 @@ public class EditImageActivity extends AppCompatActivity {
         // Initialize UI elements
         imageView = findViewById(R.id.imageView);
         saveButton = findViewById(R.id.saveButton);
-        addButton = findViewById(R.id.addButton);
         deleteButton = findViewById(R.id.deleteButton);
         labelSpinner = findViewById(R.id.labelSpinner);
         recropButton = findViewById(R.id.recropButton);
@@ -108,7 +107,7 @@ public class EditImageActivity extends AppCompatActivity {
                             boundingBoxLabels.add(selectedLabel);
                             // Disallow further touch events until "Add" button is pressed
                             //imageView.setAllowTouch(false);
-                            addButton.setEnabled(true);  // Enable the "Add" button
+                            //addButton.setEnabled(true);  // Enable the "Add" button
                             imageView.performClick();
                             Log.d("EditImage", "CURRENT LABELS after adding boundingbox" + boundingBoxLabels);
                             // Handle touch up event
@@ -196,6 +195,7 @@ public class EditImageActivity extends AppCompatActivity {
     private void startImageCropper(String imagePath) {
         CropImage.activity(Uri.fromFile(new File(imagePath)))
                 .setGuidelines(CropImageView.Guidelines.ON)
+                .setAspectRatio(313,267)
                 .start(this);
     }
 
@@ -209,6 +209,8 @@ public class EditImageActivity extends AppCompatActivity {
                 imagePath = result.getUri().getPath();
                 if (imagePath != null) {
                     loadImageIntoImageView(imagePath);
+                    //  imagePath to update the database
+                    dbHelper.updateCroppedImagePath(imageId, imagePath);
                 }
                 // Clear existing bounding boxes as the image has changed
                 //imageView.clearBoundingBoxes();

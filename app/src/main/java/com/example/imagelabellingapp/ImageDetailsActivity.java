@@ -41,9 +41,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private BoundingBoxImageView imageView;
     private float[] boundingBox = new float[4];
 
-    private ImageButton recropButton;
+    private ImageButton recropButton, deleteButton;
 
-    private Button addButton, deleteButton;
 
     DBHelper dbHelper;
 
@@ -61,7 +60,6 @@ public class ImageDetailsActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         dbHelper = new DBHelper(this);
         recropButton = findViewById(R.id.recropButton);
-        addButton = findViewById(R.id.addButton);
         deleteButton = findViewById(R.id.deleteButton);
 
         // In ImageDetailsActivity onCreate
@@ -129,8 +127,17 @@ public class ImageDetailsActivity extends AppCompatActivity {
     }
 
     private void deleteLastBoundingBox() {
-            // Remove the last drawn bounding box
-            imageView.removeLastBoundingBox();
+        List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);
+        // Remove the last drawn bounding box
+        Log.d("EditImageActivity", "exisiting boundingBOX u823y94 before delete" + existingBoundingBoxes);
+        BoundingBox lastBoundingBox = existingBoundingBoxes.get(existingBoundingBoxes.size() - 1);
+
+        long lastBoundingBoxId = lastBoundingBox.getId();
+        Log.d("Edit Image Activity", "deleteLastBoundingBox: lastBoundingBox = " + lastBoundingBoxId);
+
+        dbHelper.deleteBoundingBoxById(lastBoundingBoxId);
+        imageView.removeLastBoundingBox();
+        existingBoundingBoxes.remove(existingBoundingBoxes.size() - 1);
     }
 
 
@@ -209,6 +216,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private void recropImage(Uri imageUri) {
         CropImage.activity(imageUri)
                 .setGuidelines(CropImageView.Guidelines.ON)
+                .setAspectRatio(313,267)
                 .start(this);
     }
 
