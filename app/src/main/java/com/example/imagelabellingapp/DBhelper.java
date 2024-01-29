@@ -37,6 +37,8 @@ class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_IMAGE_ID = "image_id";
     public static final String COLUMN_IMAGE_PATH = "image_path";
 
+    public static final String  COLUMN_COLOUR = "colour";
+
     public static final String COLUMN_ORIGINAL_IMAGE_PATH = "original_image_path";
 
     // New column for storing selected label in the images table
@@ -97,6 +99,7 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_IMAGE_ID + " INTEGER," +
                 COLUMN_LABEL_NAME + " INTEGER," +
                 COLUMN_ID + " INTEGER," +
+                COLUMN_COLOUR + " INTEGER, " +
                 COLUMN_BBOX_X_MIN + " REAL," +
                 COLUMN_BBOX_Y_MIN + " REAL," +
                 COLUMN_BBOX_X_MAX + " REAL," +
@@ -735,6 +738,7 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_BBOX_Y_MIN,
                 COLUMN_BBOX_X_MAX,
                 COLUMN_BBOX_Y_MAX,
+                COLUMN_COLOUR,
                 TABLE_BBOXES + "." + COLUMN_LABEL_NAME,
                 TABLE_LABELS + "." + COLUMN_ID  // Add the label_id column from the labels table
         };
@@ -758,10 +762,11 @@ class DBHelper extends SQLiteOpenHelper {
                 float yMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MAX));
                 String label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
                 long labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID));
+                int color = cursor.getInt(cursor.getColumnIndex(COLUMN_COLOUR));
 
                 float[] coordinates = {xMin, yMin, xMax, yMax};
 
-                BoundingBox boundingBox = new BoundingBox(coordinates, label, id, labelId);
+                BoundingBox boundingBox = new BoundingBox(coordinates, label, id, labelId,color);
                 boundingBoxes.add(boundingBox);
             }
 
@@ -772,65 +777,7 @@ class DBHelper extends SQLiteOpenHelper {
         return boundingBoxes;
     }
 
-    // Retrieve all bounding boxes associated with a specific image ID
-    /*public List<BoundingBox> getBoundingBoxesForImage(long imageId) {
-        List<BoundingBox> boundingBoxes = new ArrayList<>();
-
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        String[] columns = {
-                COLUMN_BBOX_ID,
-                COLUMN_BBOX_X_MIN,
-                COLUMN_BBOX_Y_MIN,
-                COLUMN_BBOX_X_MAX,
-                COLUMN_BBOX_Y_MAX,
-                COLUMN_LABEL_NAME
-        };
-        String selection = COLUMN_IMAGE_ID + " = ?";
-        String[] selectionArgs = {String.valueOf(imageId)};
-
-        Cursor cursor = db.query(TABLE_BBOXES, columns, selection, selectionArgs, null, null, null);
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                long id = cursor.getLong(cursor.getColumnIndex(COLUMN_BBOX_ID));
-                float xMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MIN));
-                float yMin = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MIN));
-                float xMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MAX));
-                float yMax = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MAX));
-                String label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL_NAME));
-                float[] coordinates = {xMin, yMin, xMax, yMax};
-
-                BoundingBox boundingBox = new BoundingBox(coordinates,label,id, );
-                boundingBoxes.add(boundingBox);
-            }
-
-            cursor.close();
-        }
-
-        db.close();
-        return boundingBoxes;
-    }*/
-
-
-    /*public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-
-        values.put(COLUMN_IMAGE_ID, imageId);
-        values.put(COLUMN_BBOX_X_MIN, xMin);
-        values.put(COLUMN_BBOX_Y_MIN, yMin);
-        values.put(COLUMN_BBOX_X_MAX, xMax);
-        values.put(COLUMN_BBOX_Y_MAX, yMax);
-        values.put(COLUMN_LABEL_NAME, label);
-
-        long boundingBoxId = db.insert(TABLE_BBOXES, null, values);
-
-        db.close(); // Close the database connection
-
-        return boundingBoxId;
-    }*/
-    public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label, long projectId, long label_id) {
+    public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label, long projectId, long label_id, int color) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
@@ -842,6 +789,7 @@ class DBHelper extends SQLiteOpenHelper {
         values.put(COLUMN_LABEL_NAME, label);
         values.put(COLUMN_PROJECT_ID, projectId);
         values.put(COLUMN_ID, label_id);
+        values.put(COLUMN_COLOUR, color);
 
         long bbox_id = db.insert(TABLE_BBOXES, null, values);
         db.close();
@@ -913,43 +861,6 @@ class DBHelper extends SQLiteOpenHelper {
         return labelId;
     }
 
-   /* public long getLabelIdForBoundingBox(String labelName, long bboxId) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        long labelId = -1;  // Default value if not found
-
-        // Assuming "labels" table has columns "label_id" and "label_name"
-        String[] labelColumns = {COLUMN_ID};  // Replace with your actual column names
-        String labelSelection = COLUMN_LABEL_NAME + " = ?";
-        String[] labelSelectionArgs = {labelName};
-
-        // Query to get label_id from labels table
-        Cursor labelCursor = db.query(TABLE_LABELS, labelColumns, labelSelection, labelSelectionArgs, null, null, null);
-
-        if (labelCursor != null && labelCursor.moveToFirst()) {
-            // Assuming "bboxes" table has columns "bbox_id" and "label_id"
-            String[] bboxColumns = {COLUMN_ID};  // Replace with your actual column names
-            String bboxSelection = COLUMN_BBOX_ID + " = ?";
-            String[] bboxSelectionArgs = {String.valueOf(bboxId)};
-
-            // Query to get label_id from bboxes table using bbox_id
-            Cursor bboxCursor = db.query(TABLE_BBOXES, bboxColumns, bboxSelection, bboxSelectionArgs, null, null, null);
-
-            if (bboxCursor != null && bboxCursor.moveToFirst()) {
-                // Retrieve label_id from the cursor
-                labelId = bboxCursor.getLong(bboxCursor.getColumnIndexOrThrow(COLUMN_ID));
-            }
-
-            if (bboxCursor != null) {
-                bboxCursor.close();
-            }
-        }
-
-        if (labelCursor != null) {
-            labelCursor.close();
-        }
-
-        return labelId;
-    }*/
 
     public long getLabelIdForProjectAndLabel(long projectId, String labelName) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -993,6 +904,43 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
         return labelName;
     }
+
+    public int getBoundingBoxColor(String label, long projectId, float xMin, float yMin, float xMax, float yMax) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int color = -1;  // Default color (you can choose an appropriate default value)
+
+        try {
+            // Construct the query
+            String query = "SELECT " + COLUMN_COLOUR +
+                    " FROM " + TABLE_BBOXES +
+                    " WHERE " + COLUMN_LABEL_NAME + " = ?" +
+                    " AND " + COLUMN_PROJECT_ID + " = ?" +
+                    " AND " + COLUMN_BBOX_X_MIN + " = ?" +
+                    " AND " + COLUMN_BBOX_Y_MIN + " = ?" +
+                    " AND " + COLUMN_BBOX_X_MAX + " = ?" +
+                    " AND " + COLUMN_BBOX_Y_MAX + " = ?";
+
+            // Execute the query
+            Cursor cursor = db.rawQuery(query, new String[]{label, String.valueOf(projectId),
+                    String.valueOf(xMin), String.valueOf(yMin), String.valueOf(xMax), String.valueOf(yMax)});
+
+            // Check if the cursor has results
+            if (cursor != null && cursor.moveToFirst()) {
+                // Retrieve the color from the result set
+                color = cursor.getInt(cursor.getColumnIndex(COLUMN_COLOUR));
+                cursor.close();  // Close the cursor to free up resources
+            }
+        } catch (Exception e) {
+            // Handle exceptions (e.g., log or print the error)
+            e.printStackTrace();
+        } finally {
+            // Close the database connection
+            db.close();
+        }
+
+        return color;
+    }
+
 
 
 

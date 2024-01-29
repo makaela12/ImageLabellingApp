@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -24,7 +25,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class selectProject extends AppCompatActivity {
 
@@ -184,6 +187,14 @@ public class selectProject extends AppCompatActivity {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         // get project ID based on the project name
         int projectId = getProjectId(projectName);
+
+        // Get a list of all image paths for the project
+        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
+
+        // Delete all images associated with the project
+        for (String imagePath : imagePaths) {
+            deleteImageFile(imagePath);
+        }
         // delete related labels
         dbHelper.deleteLabelsForProject(projectId);
         // delete related images
@@ -272,6 +283,29 @@ public class selectProject extends AppCompatActivity {
 
         // show the popup
         helpDialog.show();
+    }
+
+    private void deleteImageFile(String imagePath) {
+        // Create a File object representing the image file
+        File imageFile = new File(imagePath);
+
+        // Check if the file exists before attempting to delete it
+        if (imageFile.exists()) {
+            // Delete the file
+            boolean deleted = imageFile.delete();
+
+            // Check if the file deletion was successful
+            if (deleted) {
+                // Log a message or perform any additional actions upon successful deletion
+                Log.d("DeleteImage", "Image file deleted successfully: " + imagePath);
+            } else {
+                // Log an error message or handle the case where deletion failed
+                Log.e("DeleteImage", "Failed to delete image file: " + imagePath);
+            }
+        } else {
+            // Log a message or handle the case where the file does not exist
+            Log.d("DeleteImage", "Image file does not exist: " + imagePath);
+        }
     }
 
 }

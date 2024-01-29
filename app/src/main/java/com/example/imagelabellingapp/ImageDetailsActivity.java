@@ -2,6 +2,7 @@ package com.example.imagelabellingapp;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -46,8 +47,6 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
     DBHelper dbHelper;
 
-    // TODO: when a user clicks on an item in the MainActivity2 ListView, need a way to allow the user to edit the label or recrop the image
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,7 +70,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
         // Retrieve image path from the Intent
         imagePath = getIntent().getStringExtra("imagePath");
-        projectId = getIntent().getLongExtra("projectId", -1); // -1 is the default value if not found
+        projectId = getIntent().getLongExtra("projectId", -1);
 
         // Retrieve imageId from the Intent
         imageId = getIntent().getLongExtra("imageId", -1);
@@ -91,6 +90,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         imageView.setOnTouchListener((v, event) -> {
             if (labelSpinner.getSelectedItem() != null) {
                 String selectedLabel = labelSpinner.getSelectedItem().toString();
+                int color = getLabelColor(selectedLabel, projectId);
                 if (!imageView.hasBoundingBox() || imageView.isAllowTouch()) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
@@ -103,13 +103,13 @@ public class ImageDetailsActivity extends AppCompatActivity {
                             // Handle touch move event
                                 boundingBox[2] = event.getX();
                                 boundingBox[3] = event.getY();
-                                imageView.drawBoundingBox(boundingBox, selectedLabel);
+                                imageView.drawBoundingBox(boundingBox, selectedLabel, projectId, color);
                                 break;
                         case MotionEvent.ACTION_UP:
                                 long lid = dbHelper.getLabelIdForProjectAndLabel(projectId,selectedLabel);
-                                long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel, projectId,lid);
+                                long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel, projectId,lid, color);
                                 long label_id = dbHelper.getLabelIdForBoundingBox(selectedLabel,bbox_id);
-                                imageView.addBoundingBox(boundingBox, selectedLabel,bbox_id,label_id);
+                                imageView.addBoundingBox(boundingBox, selectedLabel,bbox_id,label_id,color);
                                 // Add the corresponding label to the list
                                 boundingBoxLabels.add(selectedLabel);
                                 imageView.performClick();
@@ -276,6 +276,45 @@ public class ImageDetailsActivity extends AppCompatActivity {
                 Exception error = result.getError();
                 error.printStackTrace();
             }
+        }
+    }
+
+    private int getLabelColor(String label, long projectId) {
+        // Get the list of labels for the project from the database
+        List<String> projectLabels = dbHelper.getLabelsForProject(projectId);
+
+        // Find the index of the label in the projectLabels list
+        int labelIndex = projectLabels.indexOf(label);
+        Log.d("IMAGEDETAILSACTVIITY TEST", "getLabelColor: INDEX ="+labelIndex +"project labels" + projectLabels);
+
+        // Assign colors based on the index
+        switch (labelIndex) {
+            case 0:
+                return Color.BLUE;
+            case 1:
+                return Color.GREEN;
+            case 2:
+                return Color.RED;
+            case 3:
+                return Color.YELLOW;
+            case 4:
+                return Color.rgb(0, 128, 128);
+            case 5:
+                return Color.rgb(0, 100, 0);
+            case 6:
+                return Color.rgb(255, 165, 0);
+            case 7:
+                return Color.rgb(255, 20, 147);
+            case 8:
+                return Color.rgb(0, 0, 128); // Navy
+            case 9:
+                return Color.rgb(128, 0, 0);
+            case 10:
+                return Color.rgb(169, 169, 169);
+            // Add more cases as needed
+            default:
+                // Use a default color for labels beyond the defined cases
+                return Color.rgb(169, 169, 169); // Dark Gray
         }
     }
 

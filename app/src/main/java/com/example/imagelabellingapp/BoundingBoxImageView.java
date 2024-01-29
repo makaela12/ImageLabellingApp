@@ -21,9 +21,11 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
     private DBHelper dbHelper;
 
-
     private boolean allowTouch = true;
 
+    private long projectId;
+
+    private int color;
 
     // List to store bounding boxes
     private List<BoundingBox> boundingBoxes;
@@ -52,16 +54,19 @@ public class BoundingBoxImageView extends AppCompatImageView {
     // Constructors and initialization method
     public BoundingBoxImageView(Context context) {
         super(context);
+        dbHelper = new DBHelper(context);
         init();
     }
 
     public BoundingBoxImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        dbHelper = new DBHelper(context);
         init();
     }
 
     public BoundingBoxImageView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        dbHelper = new DBHelper(context);
         init();
     }
 
@@ -88,27 +93,14 @@ public class BoundingBoxImageView extends AppCompatImageView {
         return boundingBox != null && boundingBoxes.size() != 0;
     }
 
-    // Method to get the coordinates of the current bounding box
-    public float[] getBoundingBox() {
-        return boundingBox;
-    }
-
-    // Method to clear the current bounding box
-    public void clearBoundingBox() {
-        boundingBox = null;
-        invalidate(); // Redraw the view
-    }
-
-    // Sets the bounding box listener to receive updates when the bounding box changes.
-    public void setBoundingBoxListener(BoundingBoxListener listener) {
-        this.boundingBoxListener = listener;
-    }
 
     // method to draw the bounding box on the canvas.
-    public void drawBoundingBox(float[] boundingBox, String label) {
+    public void drawBoundingBox(float[] boundingBox, String label, long projectId, int color) {
         Log.d("BoundingBoxIV", "drawBoundingBox: label:" + label);
         this.boundingBox = boundingBox;
         this.label = label;
+        this.projectId = projectId;
+        this.color = color;
         invalidate();
     }
 
@@ -120,9 +112,10 @@ public class BoundingBoxImageView extends AppCompatImageView {
         for (BoundingBox boundingBox : boundingBoxes) {
             float[] coordinates = new float[]{boundingBox.getLeft(), boundingBox.getTop(), boundingBox.getRight(), boundingBox.getBottom()};
 
+            int color = boundingBox.getColor();
             String label = boundingBox.getLabel();
             Log.d("BoundingBoxIV", "onDraw: label:" + label);
-            drawLabel(canvas,coordinates,label);
+            drawLabel(canvas,coordinates,label,color);
         }
 
     }
@@ -163,7 +156,6 @@ public class BoundingBoxImageView extends AppCompatImageView {
                             // Resize the bounding box if touched outside
                             resizeBoundingBox(newX, newY);
                         }
-
                         lastTouchX = newX;
                         lastTouchY = newY;
 
@@ -251,24 +243,13 @@ public class BoundingBoxImageView extends AppCompatImageView {
         }
     }
 
-    // Saves the final bounding box coordinates by notifying the listener.
-    public void saveBoundingBox() {
-        if (boundingBoxListener != null && boundingBox != null && boundingBox.length == 4) {
-            float xMin = boundingBox[0];
-            float yMin = boundingBox[1];
-            float xMax = boundingBox[2];
-            float yMax = boundingBox[3];
-
-            // Notify the listener to save the bounding box coordinates
-            boundingBoxListener.onSaveBoundingBox(xMin, yMin, xMax, yMax);
-        }
-    }
 
     // Method to add a new bounding box with a specific color
-    public void addBoundingBox(float[] coordinates, String label, long bbox_id, long label_id) {
+    public void addBoundingBox(float[] coordinates, String label, long bbox_id, long label_id, int color) {
         Log.d("BoundingBoxIV", "addBoundingBox: label added:" + label);
+       // int color = dbHelper.getBoundingBoxColor(label,projectId,coordinates[0],coordinates[1],coordinates[2],coordinates[3]);
        // long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], label);
-        BoundingBox newBoundingBox = new BoundingBox(coordinates,label,bbox_id, label_id);
+        BoundingBox newBoundingBox = new BoundingBox(coordinates,label,bbox_id, label_id,color);
         boundingBoxes.add(newBoundingBox);
         Log.d("BoundingBoxIV", "addBoundingBox: number of bounding boxes =" +  boundingBoxes.size());
         invalidate(); // Redraw the view
@@ -276,7 +257,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
 
     // Helper method to draw the label on the canvas
-    private void drawLabel(Canvas canvas,float[] coordinates, String label) {
+    private void drawLabel(Canvas canvas, float[] coordinates, String label, int color) {
         if (coordinates != null && coordinates.length == 4) {
             float left = coordinates[0];
             float top = coordinates[1];
@@ -298,7 +279,16 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
                 // Draw the background rectangle
                 Paint backgroundPaint = new Paint();
-                backgroundPaint.setColor(Color.RED); // Set your desired background color
+               // int labelColor = getLabelColor(label,projectId); // Get color based on label
+                //int labelColor = dbHelper.getBoundingBoxColor(label,projectId,left,top,right,bottom);
+                int red = Color.red(color);
+                int green = Color.green(color);
+                int blue = Color.blue(color);
+                int alpha = Color.alpha(color);
+                int colour = Color.argb(alpha,red,green,blue);
+                //backgroundPaint.setColor(color);
+                backgroundPaint.setColor(colour);
+                //backgroundPaint.setColor(Color.RED); // Set your desired background color
                 float textWidth = textPaint.measureText(label);
                 float textHeight = 40;
 
@@ -312,6 +302,7 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
                 // Draw the label text
                 Paint textPaint2 = new Paint();
+                backgroundPaint.setColor(colour);
                 textPaint2.setColor(Color.WHITE); // Set your desired color
                // paint.setColor(highlighted ? Color.YELLOW : Color.RED); // Change color if highlighted
                 textPaint2.setTextSize(30); // Set your desired text size
@@ -320,7 +311,8 @@ public class BoundingBoxImageView extends AppCompatImageView {
 
                 // Draw the bounding box
                 Paint paint = new Paint();
-                paint.setColor(Color.RED);
+                paint.setColor(colour);
+               // paint.setColor(Color.RED);
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(8);
                 canvas.drawRect(left, top, right, bottom, paint);
@@ -338,34 +330,35 @@ public class BoundingBoxImageView extends AppCompatImageView {
         }
     }
 
-    // Method to get the coordinates of the last drawn bounding box
-    public float[] getLastBoundingBox() {
-        if (!boundingBoxes.isEmpty()) {
-            BoundingBox lastBoundingBox = boundingBoxes.get(boundingBoxes.size() - 1);
-            return new float[]{lastBoundingBox.getLeft(), lastBoundingBox.getTop(), lastBoundingBox.getRight(), lastBoundingBox.getBottom()};
-        } else {
-            return null; // Return null if there are no bounding boxes
-        }
-    }
-
-    public List<BoundingBox> getBoundingBoxes() {
-        return new ArrayList<>(boundingBoxes);
-    }
 
     public void setBoundingBoxes(List<BoundingBox> boundingBoxes) {
-        //this.boundingBoxes.clear();
-        //this.boundingBoxes.addAll(boundingBoxes);
-        //invalidate(); // Trigger a redraw
         this.boundingBoxes = boundingBoxes;
         invalidate(); // Redraw the canvas
     }
 
-    // Clear existing bounding boxes
-    public void clearBoundingBoxes() {
-        boundingBoxes.clear();
-        invalidate(); // Trigger a redraw
-    }
+    // Helper method to get color based on the order of the label for a project
+    private int getLabelColor(String label, long projectId) {
+        // Get the list of labels for the project from the database
+        List<String> projectLabels = dbHelper.getLabelsForProject(projectId);
 
+        // Find the index of the label in the projectLabels list
+        int labelIndex = projectLabels.indexOf(label);
+        Log.d("BOUNDINGBOXIMAGEVIEW TEST", "getLabelColor: INDEX ="+labelIndex +"project labels" + projectLabels);
+
+        // Assign colors based on the index
+        switch (labelIndex) {
+            case 0:
+                return Color.BLUE;
+            case 1:
+                return Color.GREEN;
+            case 2:
+                return Color.RED;
+            // Add more cases as needed
+            default:
+                // Use a default color for labels beyond the defined cases
+                return Color.YELLOW;
+        }
+    }
 
 }
 

@@ -637,6 +637,8 @@ public class MainActivity2 extends AppCompatActivity {
                 // Remove the item from the adapter
                 imageAdapter.remove(selectedImagePath);
                 imageAdapter.notifyDataSetChanged();
+                // Delete the image file from storage
+                deleteImageFile(selectedImagePath);
                 dialog.dismiss();
             }
         });
@@ -706,27 +708,42 @@ public class MainActivity2 extends AppCompatActivity {
                 long i_id = dbHelper.getImageIdFromPath(imagePath);
                 String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
 
+                // Load the image using its path
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true; // This will only get the image dimensions, not load the entire image into memory
+                BitmapFactory.decodeFile(imagePath, options);
+
+                // Get the width and height of the image
+                int imageWidth = options.outWidth;
+                int imageHeight = options.outHeight;
                 // Write YOLO format label file
                 zipOutputStream.putNextEntry(new ZipEntry("labels/" + getFileNameWithoutExtension(imagePath)));
+
+                // Normalize the values to be in the range of 0-1
+                float normalizedXCenter = (boundingBox[0] + boundingBox[2]) / (2 * imageWidth);
+                float normalizedYCenter = (boundingBox[1] + boundingBox[3]) / (2 * imageHeight);
+                float normalizedWidth = (boundingBox[2] - boundingBox[0]) / imageWidth;
+                float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;
+
                 String labelData = String.format("%d %.6f %.6f %.6f %.6f",
+                        labelNames.indexOf(label),     // Object class index
+                        normalizedXCenter,             // x-center (normalized)
+                        normalizedYCenter,             // y-center (normalized)
+                        normalizedWidth,               // width (normalized)
+                        normalizedHeight);             // height (normalized)
+               /* String labelData = String.format("%d %.6f %.6f %.6f %.6f",
                         labelNames.indexOf(label), // Object class index
                         (boundingBox[0] + boundingBox[2]) / 2, // x-center
                         (boundingBox[1] + boundingBox[3]) / 2, // y-center
                         (boundingBox[2] - boundingBox[0]),    // width
-                        (boundingBox[3] - boundingBox[1]));   // height
+                        (boundingBox[3] - boundingBox[1]));   // height*/
                 zipOutputStream.write(labelData.getBytes());
-                // zipOutputStream.closeEntry();
 
                 // Copy image file
                 zipOutputStream.putNextEntry(new ZipEntry("images/" + getFileNameWithoutExtension(imagePath)));
                 zipOutputStream.write(getFileBytes(new File(imagePath)));
                 zipOutputStream.closeEntry();
             }
-
-            // Show a success message
-            runOnUiThread(() -> {
-               // Toast.makeText(this, "Project exported successfully", Toast.LENGTH_SHORT).show();
-            });
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -741,6 +758,7 @@ public class MainActivity2 extends AppCompatActivity {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("application/zip");
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+
 
         // Check if there is any application that can handle the sharing intent
         if (shareIntent.resolveActivity(getPackageManager()) != null) {
@@ -769,14 +787,9 @@ public class MainActivity2 extends AppCompatActivity {
             info.put("url", "Your project URL");
             info.put("version", "1.0");
             info.put("year", 2024);
-            info.put("contributor", "Your name or contributor");
-            info.put("date_created", getCurrentDate()); // Implement getCurrentDate() to get the current date
+            info.put("date_created", getCurrentDate());
             cocoJson.put("info", info);
 
-            // Create 'licenses' section (optional)
-            JSONArray licenses = new JSONArray();
-            // Add license information if needed
-            cocoJson.put("licenses", licenses);
 
             // Create 'categories' section
             JSONArray categories = new JSONArray();
@@ -784,7 +797,7 @@ public class MainActivity2 extends AppCompatActivity {
                 JSONObject category = new JSONObject();
                 category.put("id", i + 1); // IDs start from 1 in COCO format
                 category.put("name", labelNames.get(i));
-                category.put("supercategory", "object"); // You can customize this
+                category.put("supercategory", "object");
                 categories.put(category);
             }
             cocoJson.put("categories", categories);
@@ -794,8 +807,8 @@ public class MainActivity2 extends AppCompatActivity {
             for (String imagePath : imagePaths) {
                 JSONObject image = new JSONObject();
                 image.put("id", images.length() + 1); // IDs start from 1 in COCO format
-                image.put("width", getImageWidth(imagePath)); // Implement getImageWidth() to get image width
-                image.put("height", getImageHeight(imagePath)); // Implement getImageHeight() to get image height
+                image.put("width", getImageWidth(imagePath));
+                image.put("height", getImageHeight(imagePath));
                 image.put("file_name", getFileNameWithoutExtension(imagePath));
                 images.put(image);
             }
@@ -804,8 +817,6 @@ public class MainActivity2 extends AppCompatActivity {
             // Create 'annotations' section
             JSONArray annotations = new JSONArray();
             for (String imagePath : imagePaths) {
-               // String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
-                //float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
                 float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
                 long i_id = dbHelper.getImageIdFromPath(imagePath);
                 String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
@@ -814,10 +825,8 @@ public class MainActivity2 extends AppCompatActivity {
                 annotation.put("id", annotations.length() + 1); // IDs start from 1 in COCO format
                 annotation.put("image_id", getImageId(imagePath, images));
                 annotation.put("category_id", labelNames.indexOf(label) + 1); // IDs start from 1 in COCO format
-                annotation.put("segmentation", new JSONArray()); // You can customize this
                 annotation.put("area", calculateArea(boundingBox));
                 annotation.put("bbox", new JSONArray(boundingBox)); // x, y, width, height
-                annotation.put("iscrowd", 0); // 0 for bounding boxes
                 annotations.put(annotation);
             }
             cocoJson.put("annotations", annotations);
@@ -834,18 +843,11 @@ public class MainActivity2 extends AppCompatActivity {
                 return;
             }
 
-
-            // Show a success message
-            runOnUiThread(() -> {
-                //Toast.makeText(this, "Project exported in COCO format successfully", Toast.LENGTH_SHORT).show();
-            });
-
             // Create a URI for the exported JSON file
             Uri uri = FileProvider.getUriForFile(this, "com.example.imagelabellingapp.fileprovider", exportJsonFile);
 
             // Create a sharing intent
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            //shareIntent.setType("application/json");
             // Change the intent type to "text/plain"
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
@@ -940,5 +942,29 @@ public class MainActivity2 extends AppCompatActivity {
             return new byte[0];
         }
     }
+
+    private void deleteImageFile(String imagePath) {
+        // Create a File object representing the image file
+        File imageFile = new File(imagePath);
+
+        // Check if the file exists before attempting to delete it
+        if (imageFile.exists()) {
+            // Delete the file
+            boolean deleted = imageFile.delete();
+
+            // Check if the file deletion was successful
+            if (deleted) {
+                // Log a message or perform any additional actions upon successful deletion
+                Log.d("DeleteImage", "Image file deleted successfully: " + imagePath);
+            } else {
+                // Log an error message or handle the case where deletion failed
+                Log.e("DeleteImage", "Failed to delete image file: " + imagePath);
+            }
+        } else {
+            // Log a message or handle the case where the file does not exist
+            Log.d("DeleteImage", "Image file does not exist: " + imagePath);
+        }
+    }
+
 
 }

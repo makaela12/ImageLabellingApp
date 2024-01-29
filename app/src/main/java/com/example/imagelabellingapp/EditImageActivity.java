@@ -1,6 +1,7 @@
 package com.example.imagelabellingapp;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -62,6 +63,7 @@ public class EditImageActivity extends AppCompatActivity {
 
         // Update label names in existing bounding boxes, incase any label names have been edited
         updateBoundingBoxLabels(existingBoundingBoxes);
+        //updateBoundingBoxColors(existingBoundingBoxes);
         imageView.setBoundingBoxes(existingBoundingBoxes);
         // Manually trigger a redraw of the BoundingBoxImageView
         imageView.invalidate();
@@ -83,6 +85,7 @@ public class EditImageActivity extends AppCompatActivity {
         imageView.setOnTouchListener((v, event) -> {
             if (labelSpinner.getSelectedItem() != null) {
                 String selectedLabel = labelSpinner.getSelectedItem().toString();
+                int color = getLabelColor(selectedLabel, projectId);
                 if (!imageView.hasBoundingBox() || imageView.isAllowTouch()) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
@@ -95,14 +98,14 @@ public class EditImageActivity extends AppCompatActivity {
                             // Handle touch move event
                             boundingBox[2] = event.getX();
                             boundingBox[3] = event.getY();
-                            imageView.drawBoundingBox(boundingBox, selectedLabel);
+                            imageView.drawBoundingBox(boundingBox, selectedLabel, projectId,color);
                             break;
                         case MotionEvent.ACTION_UP:
                             long lid = dbHelper.getLabelIdForProjectAndLabel(projectId,selectedLabel);
                             Log.d("EditImage", "" + lid);
-                            long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel,projectId,lid);
+                            long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel,projectId,lid, color);
                             long label_id = dbHelper.getLabelIdForBoundingBox(selectedLabel,bbox_id);
-                            imageView.addBoundingBox(boundingBox, selectedLabel, bbox_id, label_id);
+                            imageView.addBoundingBox(boundingBox, selectedLabel, bbox_id, label_id,color);
                             // Add the corresponding label to the list
                             boundingBoxLabels.add(selectedLabel);
                             // Disallow further touch events until "Add" button is pressed
@@ -229,4 +232,35 @@ public class EditImageActivity extends AppCompatActivity {
         }
     }
 
+
+    // Helper method to get color based on the order of the label for a project
+    private int getLabelColor(String label, long projectId) {
+        // Get the list of labels for the project from the database
+        List<String> projectLabels = dbHelper.getLabelsForProject(projectId);
+
+        // Find the index of the label in the projectLabels list
+        int labelIndex = projectLabels.indexOf(label);
+        Log.d("EDITIMAGEACTIVITY TEST", "getLabelColor: INDEX ="+labelIndex +"project labels" + projectLabels);
+
+        // Assign colors based on the index
+        switch (labelIndex) {
+            case 0:
+                return Color.BLUE;
+            case 1:
+                return Color.GREEN;
+            case 2:
+                return Color.RED;
+            // Add more cases as needed
+            default:
+                // Use a default color for labels beyond the defined cases
+                return Color.YELLOW;
+        }
+    }
+    private void updateBoundingBoxColors(List<BoundingBox> boundingBoxes) {
+        for (BoundingBox boundingBox : boundingBoxes) {
+            String label = boundingBox.getLabel();
+            int color = getLabelColor(label, projectId);
+            boundingBox.setColor(color);
+        }
+    }
 }

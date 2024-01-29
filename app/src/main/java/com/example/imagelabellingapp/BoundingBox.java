@@ -10,14 +10,17 @@ public class BoundingBox {
     private long id;
     private long labelId;
 
+    private int color;
 
 
 
-    public BoundingBox(float[] coordinates, String label, long id, long labelId) {
+
+    public BoundingBox(float[] coordinates, String label, long id, long labelId, int color) {
         this.coordinates = coordinates;
         this.label = label;
         this.id = id;
         this.labelId = labelId;
+        this.color = color;
 
 
     }
@@ -58,6 +61,14 @@ public class BoundingBox {
 
     public long getLabelId() {
         return labelId;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
 }
