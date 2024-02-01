@@ -20,6 +20,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,6 +46,11 @@ public class createProject extends AppCompatActivity {
     private ArrayList<String> labelArr;
     private ArrayAdapter<String> adapter;
 
+    private RadioGroup radioGroup;
+    private RadioButton radioFixed, radioCustom;
+    private Spinner aspectRatioSpinner;
+    private EditText editTextWidth, editTextHeight;
+
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -61,6 +69,12 @@ public class createProject extends AppCompatActivity {
         labelArr = new ArrayList<>();
         saveBtn = findViewById(R.id.saveBtn);
         helpButton = findViewById(R.id.helpButton);
+        radioGroup = findViewById(R.id.radioGroup);
+        radioFixed = findViewById(R.id.radioFixed);
+        radioCustom = findViewById(R.id.radioCustom);
+        aspectRatioSpinner = findViewById(R.id.aspectRatioSpinner);
+        editTextWidth = findViewById(R.id.editTextWidth);
+        editTextHeight = findViewById(R.id.editTextHeight);
 
         // Initialize the Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -70,8 +84,18 @@ public class createProject extends AppCompatActivity {
         // Enable the home button (back arrow)
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        // Set up the adapter for the aspect ratio spinner
+        ArrayAdapter<CharSequence> aspectRatioAdapter = ArrayAdapter.createFromResource(this,
+                R.array.aspect_ratio_options, android.R.layout.simple_spinner_item);
+        aspectRatioAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        aspectRatioSpinner.setAdapter(aspectRatioAdapter);
+
+        // Disable the spinner by default
+        aspectRatioSpinner.setEnabled(false);
+
+
         // set onClickListener for help button
-        helpButton.setOnClickListener(v -> showHelpPopup("Enter a label name and click the '+'\nto add the label to your project.\n\nClick and hold on a label\n to edit or delete"));
+        helpButton.setOnClickListener(v -> showHelpPopup("Labels are used to define particular\nobjects in an image.\n\nTo Create a Label:\n-  Enter a name in the box titled \"Labels\"\n-  Click the '+' to add the label to your\n     project.\n\nClick and hold on a label to edit\nor delete."));
 
         // initializes adapter for list view
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labelArr); // Use the class-level variable
@@ -114,6 +138,44 @@ public class createProject extends AppCompatActivity {
                         Toast.makeText(createProject.this, "Label name already exists", Toast.LENGTH_SHORT).show();
                     }
                 }
+            }
+        });
+
+        // Set listeners for radio buttons
+        radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.radioFixed) {
+                // Enable spinner and disable text boxes
+                aspectRatioSpinner.setEnabled(true);
+                editTextWidth.setEnabled(false);
+                editTextHeight.setEnabled(false);
+            } else if (checkedId == R.id.radioCustom) {
+                // Disable spinner and enable text boxes
+                aspectRatioSpinner.setEnabled(false);
+                editTextWidth.setEnabled(true);
+                editTextHeight.setEnabled(true);
+            }
+            else {
+                // No radio button selected, disable the spinner and enable text boxes
+                aspectRatioSpinner.setEnabled(false);
+                editTextWidth.setEnabled(false);
+                editTextHeight.setEnabled(false);
+            }
+        });
+
+        // Set listener for spinner item selection
+        aspectRatioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // Update width and height text boxes with selected aspect ratio
+                String selectedAspectRatio = (String) parentView.getItemAtPosition(position);
+                String[] aspectRatioParts = selectedAspectRatio.split(" x ");
+                editTextWidth.setText(aspectRatioParts[0]);
+                editTextHeight.setText(aspectRatioParts[1]);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing here
             }
         });
 

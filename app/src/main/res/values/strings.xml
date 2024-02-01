@@ -8,6 +8,16 @@
     <string name="previous">Previous</string>
     <string name="COCO">COCO</string>
     <string name="YOLO">YOLO</string>
+    <string-array name="aspect_ratio_options">
+        <item>32 x 32</item>
+        <item>64 x 64</item>
+        <item>96 x 96</item>
+        <item>128 x 128</item>
+        <item>224 x 224</item>
+        <item>256 x 256</item>
+        <item>512 x 512</item>
+
+    </string-array>
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>

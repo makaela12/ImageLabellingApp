@@ -38,11 +38,6 @@
             android:label="Export Project"
             android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
         <activity
-            android:name=".EditImage"
-            android:exported="false"
-            android:label="Image Details"
-            android:theme="@style/Theme.ImageLabellingApp.NoActionBar" />
-        <activity
             android:name=".EditProjectActivity"
             android:exported="false"
             android:label="Edit Project Details"

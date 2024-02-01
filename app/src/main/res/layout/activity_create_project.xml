@@ -5,7 +5,8 @@
     android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/backdrop2"
+    android:background="#94E6E6E6"
+    android:elevation="3dp"
     tools:context=".createProject">
 
     <androidx.appcompat.widget.Toolbar
@@ -15,7 +16,7 @@
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
         android:theme="?attr/actionBarTheme"
-        app:popupTheme="@style/AppTheme.PopupOverlay" >
+        app:popupTheme="@style/AppTheme.PopupOverlay">
 
         <ImageButton
             android:id="@+id/helpButton"
@@ -28,65 +29,40 @@
             android:foregroundTint="#FBFBFB"
             android:padding="8dp"
             android:src="@android:drawable/ic_menu_info_details"
-            android:tint="#00FFFFFF"/>
+            android:tint="#00FFFFFF" />
 
     </androidx.appcompat.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/projTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/toolbar"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="65dp"
-        android:text="Project Name"
-        android:textColor="#3E3E3E"
-        android:textSize="17sp" />
-
     <View
         android:id="@+id/rectangleBackground1"
-        android:layout_width="wrap_content"
-        android:layout_height="43dp"
+        android:layout_width="231dp"
+        android:layout_height="44dp"
         android:layout_below="@id/projTitle"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerInParent="true"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="96dp"
-        android:layout_marginEnd="113dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="78dp"
+        android:layout_marginEnd="168dp"
         android:background="@drawable/backgd"
-        android:elevation="8dp" />
+        android:elevation="6dp" />
 
     <EditText
         android:id="@+id/projName"
-        android:layout_width="260dp"
+        android:layout_width="220dp"
         android:layout_height="wrap_content"
         android:layout_below="@id/projTitle"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="104dp"
-        android:elevation="8dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="86dp"
+        android:backgroundTint="#FAF7F7"
+        android:elevation="6dp"
         android:ems="10"
-        android:hint="Name"
+        android:hint="Project Name"
         android:inputType="textPersonName"
         android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/labelTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/projName"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="11dp"
-        android:layout_marginTop="155dp"
-        android:text="Labels"
-        android:textColor="#3E3E3E"
-        android:textSize="17sp" />
 
     <View
         android:id="@+id/rectangleBackground2"
@@ -96,34 +72,35 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerInParent="true"
-        android:layout_marginStart="11dp"
-        android:layout_marginTop="191dp"
-        android:layout_marginEnd="173dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="151dp"
+        android:layout_marginEnd="168dp"
         android:background="@drawable/backgd"
-        android:elevation="8dp" />
+        android:elevation="6dp" />
 
     <EditText
         android:id="@+id/inputLabel"
-        android:layout_width="201dp"
+        android:layout_width="219dp"
         android:layout_height="wrap_content"
-        android:layout_below="@id/labelTitle"
+        android:layout_below="@id/projName"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="21dp"
+        android:layout_marginStart="19dp"
+        android:layout_marginTop="29dp"
         android:layout_marginRight="-1dp"
         android:layout_marginBottom="6dp"
-        android:elevation="8dp"
-        android:hint="Add new label"
+        android:backgroundTint="#FAF7F7"
+        android:elevation="6dp"
+        android:hint="Label"
         android:textSize="16sp" />
 
     <ImageButton
         android:id="@+id/labelAdd"
         android:layout_width="47dp"
         android:layout_height="48dp"
-        android:layout_below="@id/labelTitle"
+        android:layout_below="@id/projName"
         android:layout_alignParentEnd="true"
         android:layout_marginStart="10dp"
-        android:layout_marginTop="13dp"
+        android:layout_marginTop="21dp"
         android:layout_marginEnd="111dp"
         android:layout_marginBottom="4dp"
         android:background="#00FFFFFF"
@@ -131,13 +108,127 @@
         android:text="ADD"
         android:tint="#6200EA" />
 
+
+    <!-- Radio Group for Fixed and Custom Options -->
+
+    <!-- Aspect Ratio Options Spinner -->
+
     <ListView
         android:id="@+id/labelList"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="376dp"
+        android:layout_height="173dp"
         android:layout_below="@id/rectangleBackground2"
-        android:layout_marginTop="34dp"
-        android:layout_weight="1"></ListView>
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="11dp"
+        android:layout_weight="1"
+        android:background="#F3F3F3"
+        android:elevation="-3dp"></ListView>
+
+    <TextView
+        android:id="@+id/textViewImageSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_marginTop="16dp"
+        android:text="   Image Size"
+        android:textColor="#4A4949"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/textViewImageSize"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="410dp"
+        android:layout_marginEnd="23dp"
+        android:layout_marginRight="-250dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/radioCustom"
+            android:layout_width="135dp"
+            android:layout_height="wrap_content"
+            android:text="Custom" />
+
+        <RadioButton
+            android:id="@+id/radioFixed"
+            android:layout_width="158dp"
+            android:layout_height="wrap_content"
+            android:text="Fixed" />
+    </RadioGroup>
+
+
+    <Spinner
+        android:id="@+id/aspectRatioSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/radioGroup"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="47dp"
+        android:backgroundTint="#8E8C8C"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:fadingEdge="horizontal"
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/textWidth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/aspectRatioSpinner"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="85dp"
+        android:layout_marginTop="-21dp"
+        android:enabled="false"
+        android:hint="Width:"
+        android:inputType="numberDecimal" />
+
+    <TextView
+        android:id="@+id/textHeight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editTextWidth"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="85dp"
+        android:layout_marginTop="21dp"
+        android:enabled="false"
+        android:hint="Height:"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/editTextWidth"
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/aspectRatioSpinner"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="-22dp"
+        android:layout_toEndOf="@+id/textWidth"
+        android:background="#EFEDED"
+        android:backgroundTint="#FAF7F7"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:hint="Width"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/editTextHeight"
+        android:layout_width="62dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editTextWidth"
+        android:layout_marginStart="9dp"
+        android:layout_marginTop="18dp"
+        android:layout_toEndOf="@+id/textHeight"
+        android:background="#EFEDED"
+        android:backgroundTint="#FAF7F7"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:hint="Height"
+        android:inputType="numberDecimal" />
 
     <Button
         android:id="@+id/saveBtn"
@@ -145,7 +236,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerInParent="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="30dp"
         android:layout_weight="0"
         android:width="170dp"
         android:text="Save"
