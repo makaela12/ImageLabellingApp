@@ -491,10 +491,12 @@ public class MainActivity2 extends AppCompatActivity {
 
 
     private void startCropActivity(Uri sourceUri) {
+        // get the image width and height from the database based on the project ID
+        int imageWidth = dbHelper.getImageWidth(projectId);
+        int imageHeight = dbHelper.getImageHeight(projectId);
         CropImage.activity(sourceUri)
                 .setGuidelines(CropImageView.Guidelines.ON)
-                // cropped image can only be saved to specific size of 313:267
-                .setAspectRatio(313,267)
+                .setAspectRatio(imageWidth, imageHeight) // crop the image with user specified aspect ratio
                 .start(this);
     }
 
@@ -965,6 +967,5 @@ public class MainActivity2 extends AppCompatActivity {
             Log.d("DeleteImage", "Image file does not exist: " + imagePath);
         }
     }
-
 
 }

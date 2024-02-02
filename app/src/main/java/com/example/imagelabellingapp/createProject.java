@@ -49,7 +49,7 @@ public class createProject extends AppCompatActivity {
     private RadioGroup radioGroup;
     private RadioButton radioFixed, radioCustom;
     private Spinner aspectRatioSpinner;
-    private EditText editTextWidth, editTextHeight;
+    private EditText editTextWidth, editTextHeight, descriptionEditText;
 
 
     @SuppressLint("MissingInflatedId")
@@ -75,6 +75,7 @@ public class createProject extends AppCompatActivity {
         aspectRatioSpinner = findViewById(R.id.aspectRatioSpinner);
         editTextWidth = findViewById(R.id.editTextWidth);
         editTextHeight = findViewById(R.id.editTextHeight);
+        descriptionEditText = findViewById(R.id.descriptionEditText);
 
         // Initialize the Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -215,20 +216,21 @@ public class createProject extends AppCompatActivity {
             public void onClick(View v) {
                 // Get the project name entered by the user
                 projectName = projName.getText().toString().trim();
+                String description = descriptionEditText.getText().toString().trim();
+                int imageWidth = Integer.parseInt(editTextWidth.getText().toString());
+                int imageHeight = Integer.parseInt(editTextHeight.getText().toString());
+
 
                 if (!projectName.isEmpty()) {
                     // Insert the project name into the projects table
-                    long projectId = insertProject(projectName);
+                    long projectId = insertProject(projectName, description, imageWidth, imageHeight);
+
 
                     // Insert labels into the labels table with the corresponding project ID
                     if (projectId != -1) {
-                        // Log the project insertion success
-                        Log.d("createProject", "Project inserted successfully. Project ID: " + projectId);
-
                         for (String labelName : labelArr) {
                             insertLabel(projectId, labelName);
                         }
-
                         // Clear labelArr after adding labels to the database
                         labelArr.clear();
                         adapter.notifyDataSetChanged();
@@ -237,7 +239,6 @@ public class createProject extends AppCompatActivity {
                         // pass project_id to MainActivity2
                         intent.putExtra("projectId", projectId);
                         startActivity(intent);
-
                         finish();
                     }
                 }else{
@@ -271,10 +272,13 @@ public class createProject extends AppCompatActivity {
     }
 
     // Helper method to insert a project and return the project ID
-    private long insertProject(String projectName) {
+    private long insertProject(String projectName, String description, int imageWidth, int imageHeight) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DBHelper.COLUMN_PROJECT_NAME, projectName);
+        values.put(DBHelper.COLUMN_DESCRIPTION, description);
+        values.put(DBHelper.COLUMN_IMAGE_WIDTH, imageWidth);
+        values.put(DBHelper.COLUMN_IMAGE_HEIGHT, imageHeight);
         // The projectId variable is assigned the value returned by db.insert
         long projectId = db.insert(DBHelper.TABLE_PROJECTS, null, values);
 

@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/content"
-    android:background="@drawable/backdrop4"
+    android:background="#39E6E6E6"
+    android:elevation="3dp"
     tools:context=".EditProjectActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -28,117 +29,190 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/projTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/toolbar"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="72dp"
-        android:text="Project Name"
-        android:textSize="17sp"
-        android:textStyle="normal" />
-
-    <View
-        android:id="@+id/rectangleBackground1"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_centerInParent="true"
-        android:layout_marginStart="6dp"
-        android:layout_marginTop="101dp"
-        android:layout_marginEnd="110dp"
-        android:background="@drawable/backgd"
-        android:elevation="8dp" />
 
     <EditText
         android:id="@+id/projName"
-        android:layout_width="297dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/projTitle"
+        android:layout_width="289dp"
+        android:layout_height="42dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="6dp"
-        android:layout_marginTop="106dp"
-        android:layout_marginEnd="108dp"
-        android:elevation="8dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="54dp"
+        android:layout_marginTop="68dp"
+        android:background="@android:drawable/editbox_background_normal"
         android:ems="10"
-        android:hint="Name"
+        android:hint="Project Name"
         android:inputType="textPersonName"
-        android:lineSpacingExtra="10sp"
-        android:singleLine="false"
-        android:textSize="16sp" />
+        android:textSize="14sp" />
 
-
-    <TextView
-        android:id="@+id/labelTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/projName"
+    <EditText
+        android:id="@+id/descriptionEditText"
+        android:layout_width="286dp"
+        android:layout_height="74dp"
+        android:layout_below="@id/projName"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="161dp"
-        android:text="Labels"
-        android:textSize="18sp" />
-
-    <View
-        android:id="@+id/rectangleBackground2"
-        android:layout_width="wrap_content"
-        android:layout_height="41dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_centerInParent="true"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="194dp"
-        android:layout_marginEnd="174dp"
-        android:background="@drawable/backgd"
-        android:elevation="8dp" />
+        android:layout_marginStart="55dp"
+        android:layout_marginTop="11dp"
+        android:background="@android:drawable/editbox_background_normal"
+        android:gravity="top|start"
+        android:hint="Description"
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:maxLines="3"
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        android:textSize="14sp" />
 
     <EditText
         android:id="@+id/inputLabel"
-        android:layout_width="204dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/labelTitle"
+        android:layout_width="252dp"
+        android:layout_height="41dp"
+        android:layout_below="@id/projName"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="9dp"
-        android:layout_marginTop="15dp"
-        android:layout_marginEnd="4dp"
-        android:layout_marginRight="100dp"
-        android:layout_marginBottom="4dp"
-        android:elevation="8dp"
-        android:hint="Add new label"
-        android:textSize="16sp" />
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="101dp"
+        android:layout_marginRight="-1dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:drawable/editbox_background_normal"
+        android:hint="Add Label"
+        android:textSize="14sp" />
+
 
     <ImageButton
         android:id="@+id/labelAdd"
-        android:layout_width="47dp"
-        android:layout_height="48dp"
-        android:layout_below="@id/labelTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/projName"
         android:layout_alignParentEnd="true"
         android:layout_marginStart="10dp"
-        android:layout_marginTop="7dp"
-        android:layout_marginEnd="120dp"
+        android:layout_marginTop="102dp"
+        android:layout_marginEnd="70dp"
         android:layout_marginBottom="4dp"
-        android:background="#00FFFFFF"
+        android:background="@android:drawable/editbox_dropdown_light_frame"
+        android:backgroundTint="#E1E1E1"
+        android:elevation="2dp"
         android:src="@android:drawable/ic_input_add"
         android:text="ADD"
         android:tint="#6200EA" />
 
     <ListView
         android:id="@+id/labelList"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="111dp"
         android:layout_below="@id/inputLabel"
-        android:layout_marginTop="8dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="70dp"
         android:layout_weight="1"
-        android:longClickable="true"></ListView>
+        android:background="@android:drawable/editbox_background_normal"
+        android:elevation="-5dp"
+        android:fadingEdge="vertical|none"></ListView>
+
+    <TextView
+        android:id="@+id/textViewImageSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_marginTop="13dp"
+        android:text="                   Image Size"
+        android:textColor="#A4A4A4"
+        android:textSize="14sp" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/labelList"
+        android:layout_alignRight="@id/textViewImageSize"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="37dp"
+        android:layout_marginEnd="205dp"
+        android:layout_marginRight="-63dp"
+        android:background="@android:drawable/editbox_background_normal"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radioCustom"
+            android:layout_width="114dp"
+            android:layout_height="wrap_content"
+            android:text="Custom"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/radioFixed"
+            android:layout_width="158dp"
+            android:layout_height="wrap_content"
+            android:text="Fixed" />
+    </RadioGroup>
+
+    <Spinner
+        android:id="@+id/aspectRatioSpinner"
+        android:layout_width="109dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/radioGroup"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="-38dp"
+        android:layout_marginEnd="78dp"
+        android:background="#F4F3F3"
+        android:backgroundTint="#F8F8F8"
+        android:dropDownSelector="@android:drawable/arrow_down_float"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:fadingEdge="horizontal"
+        android:textAlignment="center"
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/textHeight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editTextWidth"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="-21dp"
+        android:layout_toEndOf="@+id/editTextWidth"
+        android:enabled="false"
+        android:hint="x"
+        android:inputType="numberDecimal"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/editTextWidth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/radioGroup"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="226dp"
+        android:layout_marginTop="-87dp"
+        android:background="#EFEDED"
+        android:backgroundTint="#F8F8F8"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:hint="width"
+        android:inputType="numberDecimal"
+        android:textAlignment="center"
+        android:textSize="17sp" />
+
+    <EditText
+        android:id="@+id/editTextHeight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editTextWidth"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="286dp"
+        android:layout_marginTop="-24dp"
+        android:background="#EFEDED"
+        android:backgroundTint="#F8F8F8"
+        android:elevation="3dp"
+        android:enabled="false"
+        android:hint="height"
+        android:inputType="numberDecimal"
+        android:textAlignment="center"
+        android:textSize="17sp" />
 
     <Button
         android:id="@+id/saveBtn"
@@ -146,11 +220,12 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerInParent="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="30dp"
         android:layout_weight="0"
         android:width="170dp"
         android:text="Save"
-        app:cornerRadius="300dp" />
+        app:cornerRadius="250dp" />
+
 
 
 </RelativeLayout>

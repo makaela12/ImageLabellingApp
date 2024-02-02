@@ -51,6 +51,10 @@ class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_BBOX_X_MAX = "bbox_x_max";
     public static final String COLUMN_BBOX_Y_MAX = "bbox_y_max";
 
+    public static final String COLUMN_DESCRIPTION = "description";
+    public static final String COLUMN_IMAGE_WIDTH = "image_width";
+    public static final String COLUMN_IMAGE_HEIGHT = "image_height";
+
     // New table for storing file information
     public static final String TABLE_FILES = "files";
     public static final String COLUMN_FILE_ID = "file_id";
@@ -66,7 +70,10 @@ class DBHelper extends SQLiteOpenHelper {
         // Create projects table
         String createProjectsTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_PROJECTS + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                COLUMN_PROJECT_NAME + " TEXT);";
+                COLUMN_PROJECT_NAME + " TEXT," +
+                COLUMN_DESCRIPTION + " TEXT," +
+                COLUMN_IMAGE_WIDTH + " INTEGER," +
+                COLUMN_IMAGE_HEIGHT + " INTEGER);";
 
         // Create labels table
         String createLabelsTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_LABELS + " (" +
@@ -82,17 +89,7 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_IMAGE_PATH + " TEXT," +
                 COLUMN_ORIGINAL_IMAGE_PATH + " TEXT);";
 
-       /*String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
-                COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                COLUMN_IMAGE_ID + " INTEGER," +
-                COLUMN_LABEL_NAME + " INTEGER," +
-                COLUMN_BBOX_X_MIN + " REAL," +
-                COLUMN_BBOX_Y_MIN + " REAL," +
-                COLUMN_BBOX_X_MAX + " REAL," +
-                COLUMN_BBOX_Y_MAX + " REAL," +
-                "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
-                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + "));";*/
-
+       // Create Bounding Box table
         String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
                 COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 COLUMN_PROJECT_ID + " INTEGER," +
@@ -132,10 +129,13 @@ class DBHelper extends SQLiteOpenHelper {
     }
 
     // used to update the project name in DB after making changes to it
-    public void updateProject(long projectId, String newProjectName) {
+    public void updateProject(long projectId, String newProjectName, String description, int imageWidth, int imageHeight) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_PROJECT_NAME, newProjectName);
+        values.put(DBHelper.COLUMN_DESCRIPTION, description);
+        values.put(DBHelper.COLUMN_IMAGE_WIDTH, imageWidth);
+        values.put(DBHelper.COLUMN_IMAGE_HEIGHT, imageHeight);
 
         db.update(TABLE_PROJECTS, values, COLUMN_ID + " = ?",
                 new String[]{String.valueOf(projectId)});
@@ -939,6 +939,36 @@ class DBHelper extends SQLiteOpenHelper {
         }
 
         return color;
+    }
+
+    public int getImageWidth(long projectId) {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] projection = {COLUMN_IMAGE_WIDTH};
+        String selection = COLUMN_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId)};
+
+        try (Cursor cursor = db.query(TABLE_PROJECTS, projection, selection, selectionArgs, null, null, null)) {
+            if (cursor.moveToFirst()) {
+                return cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_WIDTH));
+            }
+        }
+
+        return 0; // Default value if not found
+    }
+
+    public int getImageHeight(long projectId) {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] projection = {COLUMN_IMAGE_HEIGHT};
+        String selection = COLUMN_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(projectId)};
+
+        try (Cursor cursor = db.query(TABLE_PROJECTS, projection, selection, selectionArgs, null, null, null)) {
+            if (cursor.moveToFirst()) {
+                return cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_HEIGHT));
+            }
+        }
+
+        return 0; // Default value if not found
     }
 
 

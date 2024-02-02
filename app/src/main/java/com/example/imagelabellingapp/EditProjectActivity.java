@@ -166,10 +166,13 @@ public class EditProjectActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Get the updated project name
                 projectName = projName.getText().toString().trim();
+               // String description = descriptionEditText.getText().toString().trim();
+               // int imageWidth = Integer.parseInt(editTextWidth.getText().toString());
+             //   int imageHeight = Integer.parseInt(editTextHeight.getText().toString());
 
                 if (!projectName.isEmpty()) {
                     // Update the project name in the database
-                    dbHelper.updateProject(projectId, projectName);
+                 //   dbHelper.updateProject(projectId, projectName, description, imageWidth, imageHeight);
                     //long projectId = insertProject(projectName);
 
                     // Process labels (Add new labels to the project)

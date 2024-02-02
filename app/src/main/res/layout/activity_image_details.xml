@@ -9,130 +9,103 @@
     android:foregroundTint="#00747474"
     tools:visibility="visible">
 
+
     <ImageButton
         android:id="@+id/recropButton"
         android:layout_width="169dp"
-        android:layout_height="42dp"
+        android:layout_height="46dp"
         android:layout_below="@id/rectangleBackground"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="-2dp"
         android:background="@drawable/edit"
-        android:backgroundTint="#EAEAEA"
-        android:scaleType="fitStart"
+        android:backgroundTint="#F1F1F1"
+        android:elevation="8dp"
+        android:scaleType="fitCenter"
         android:src="@android:drawable/ic_menu_crop"
         android:text="Recrop" />
 
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/rectangleBackground"
-        android:layout_alignStart="@+id/recropButton"
-        android:layout_marginStart="51dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginTop="4dp"
-        android:paddingTop="16dp"
-        android:text="Resize Image" />
-
-
     <View
         android:id="@+id/rectangleBackground"
-        android:layout_width="357dp"
-        android:layout_height="312dp"
-        android:layout_below="@id/rectangleBackground2"
+        android:layout_width="350dp"
+        android:layout_height="350dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="25dp"
-        android:layout_marginTop="113dp"
-        android:layout_marginEnd="29dp"
-        android:background="@drawable/rounded_corner_background"
-        android:elevation="8dp" />
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="78dp"
+        android:layout_marginEnd="26dp"
+        android:background="@android:drawable/editbox_background_normal"
+        android:elevation="9dp" />
 
     <com.example.imagelabellingapp.BoundingBoxImageView
         android:id="@+id/imageView"
-        android:layout_width="313dp"
-        android:layout_height="267dp"
-        android:layout_below="@id/rectangleBackground2"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_below="@id/labelSpinner"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="47dp"
-        android:layout_marginTop="133dp"
-        android:elevation="8dp"
+        android:layout_marginStart="57dp"
+        android:layout_marginTop="102dp"
+        android:elevation="17dp"
         android:scaleType="centerCrop" />
+
+
+    <Spinner
+        android:id="@+id/labelSpinner"
+        android:layout_width="292dp"
+        android:layout_height="60dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="11dp"
+        android:layout_marginEnd="58dp"
+        android:contentDescription="@string/label_spinner_description"
+        android:minHeight="48dp" />
 
     <View
         android:id="@+id/rectangleBackground2"
-        android:layout_width="346dp"
-        android:layout_height="57dp"
+        android:layout_width="wrap_content"
+        android:layout_height="62dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerInParent="true"
-        android:layout_marginStart="31dp"
-        android:layout_marginTop="47dp"
-        android:layout_marginEnd="35dp"
-        android:background="@drawable/rounded_corner_background"
-        android:elevation="8dp" />
-
-    <Spinner
-        android:id="@+id/labelSpinner"
-        android:layout_width="330dp"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/rectangleBackground2"
-        android:layout_alignEnd="@+id/rectangleBackground2"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="6dp"
-        android:contentDescription="@string/label_spinner_description"
-        android:elevation="8dp"
-        android:minHeight="48dp" />
+        android:layout_marginStart="27dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="27dp"
+        android:background="@android:drawable/editbox_background_normal"
+        android:elevation="-3dp" />
 
     <ImageButton
         android:id="@+id/deleteButton"
-        android:layout_width="167dp"
-        android:layout_height="42dp"
+        android:layout_width="169dp"
+        android:layout_height="46dp"
         android:layout_below="@id/rectangleBackground"
         android:layout_alignLeft="@id/recropButton"
-        android:layout_marginLeft="185dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginLeft="178dp"
+        android:layout_marginTop="-2dp"
         android:background="@drawable/edit"
-        android:backgroundTint="#EAEAEA"
+        android:backgroundTint="#F1F1F1"
         android:clickable="true"
-        android:scaleType="fitStart"
+        android:elevation="8dp"
+        android:scaleType="fitCenter"
         android:src="@android:drawable/ic_menu_delete"
         android:text="Recrop"
         android:textSize="24sp"
         app:cornerRadius="500dp" />
 
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="87dp"
-        android:layout_height="50dp"
-        android:layout_below="@id/rectangleBackground"
-        android:layout_alignLeft="@id/textView3"
-        android:layout_alignEnd="@+id/deleteButton"
-        android:layout_marginStart="71dp"
-        android:layout_marginLeft="189dp"
-        android:layout_marginTop="21dp"
-        android:layout_marginEnd="-15dp"
-        android:layout_toEndOf="@+id/recropButton"
-        android:backgroundTint="#515050"
-        android:scaleType="centerInside"
-        android:src="@android:drawable/ic_input_add"
-        android:text="Remove"
-        android:textSize="14sp"
-        app:cornerRadius="500dp" />
-
     <Button
         android:id="@+id/saveButton"
-        android:layout_width="171dp"
+        android:layout_width="110dp"
         android:layout_height="wrap_content"
         android:layout_below="@+id/recropButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="23dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="17dp"
+        android:layout_marginEnd="154dp"
         android:background="@drawable/button_background"
         android:text="Save"
         android:textSize="16sp" />

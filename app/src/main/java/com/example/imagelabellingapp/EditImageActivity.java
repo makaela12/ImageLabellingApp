@@ -195,10 +195,13 @@ public class EditImageActivity extends AppCompatActivity {
         finish();
     }
 
-    private void startImageCropper(String imagePath) {
-        CropImage.activity(Uri.fromFile(new File(imagePath)))
+    private void startImageCropper(String image) {
+        // get the image width and height from the database based on the project ID
+        int imageWidth = dbHelper.getImageWidth(projectId);
+        int imageHeight = dbHelper.getImageHeight(projectId);
+        CropImage.activity(Uri.fromFile(new File(image)))
                 .setGuidelines(CropImageView.Guidelines.ON)
-                .setAspectRatio(313,267)
+                .setAspectRatio(imageWidth, imageHeight) // crop the image with user specified aspect ratio
                 .start(this);
     }
 
@@ -231,7 +234,6 @@ public class EditImageActivity extends AppCompatActivity {
             boundingBox.setLabel(updatedLabel);
         }
     }
-
 
     // Helper method to get color based on the order of the label for a project
     private int getLabelColor(String label, long projectId) {

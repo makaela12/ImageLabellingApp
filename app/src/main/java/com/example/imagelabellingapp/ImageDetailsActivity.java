@@ -61,20 +61,17 @@ public class ImageDetailsActivity extends AppCompatActivity {
         recropButton = findViewById(R.id.recropButton);
         deleteButton = findViewById(R.id.deleteButton);
 
-        // In ImageDetailsActivity onCreate
-        int position = getIntent().getIntExtra("position", -1);
-
         // Retrieve image URI from the intent
         String imageUriString = getIntent().getStringExtra("imageUri");
         Uri imageUri = Uri.parse(imageUriString);
 
-        // Retrieve image path from the Intent
+        // Retrieve image path, project_id and imageId from the Intent
         imagePath = getIntent().getStringExtra("imagePath");
         projectId = getIntent().getLongExtra("projectId", -1);
-
-        // Retrieve imageId from the Intent
         imageId = getIntent().getLongExtra("imageId", -1);
         loadImageIntoImageView(imagePath);
+
+        String og_image_path = dbHelper.getOriginalImagePath(imagePath);
 
         recropButton.setOnClickListener(v -> recropImage(imageUri));
         // Set up label spinner
@@ -129,6 +126,12 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private void deleteLastBoundingBox() {
         List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);
         // Remove the last drawn bounding box
+
+        if (existingBoundingBoxes.isEmpty()) {
+            // No bounding boxes to delete, show a message
+            Toast.makeText(this, "No bounding boxes to delete", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Log.d("EditImageActivity", "exisiting boundingBOX u823y94 before delete" + existingBoundingBoxes);
         BoundingBox lastBoundingBox = existingBoundingBoxes.get(existingBoundingBoxes.size() - 1);
 
@@ -214,9 +217,12 @@ public class ImageDetailsActivity extends AppCompatActivity {
     }
 
     private void recropImage(Uri imageUri) {
+        // get the image width and height from the database based on the project ID
+        int imageWidth = dbHelper.getImageWidth(projectId);
+        int imageHeight = dbHelper.getImageHeight(projectId);
         CropImage.activity(imageUri)
                 .setGuidelines(CropImageView.Guidelines.ON)
-                .setAspectRatio(313,267)
+                .setAspectRatio(imageWidth, imageHeight) // crop the image with user specified aspect ratio
                 .start(this);
     }
 
@@ -316,6 +322,22 @@ public class ImageDetailsActivity extends AppCompatActivity {
                 // Use a default color for labels beyond the defined cases
                 return Color.rgb(169, 169, 169); // Dark Gray
         }
+    }
+
+    private void setBoundingBoxImageViewSize(long projectId) {
+        DBHelper dbHelper = new DBHelper(this);
+
+        // Fetch the image width and height from the database based on the project ID
+        int imageWidth = dbHelper.getImageWidth(projectId);
+        int imageHeight = dbHelper.getImageHeight(projectId);
+
+        // Find the BoundingBoxImageView in your layout
+        BoundingBoxImageView imageView = findViewById(R.id.imageView);
+
+        // Set the dimensions of the BoundingBoxImageView programmatically
+        imageView.getLayoutParams().width = imageWidth;
+        imageView.getLayoutParams().height = imageHeight;
+        imageView.requestLayout(); // Ensure the changes take effect
     }
 
 }
