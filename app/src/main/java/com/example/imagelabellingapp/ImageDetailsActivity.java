@@ -1,5 +1,6 @@
 package com.example.imagelabellingapp;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -11,10 +12,13 @@ import android.view.MotionEvent;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -46,7 +50,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private BoundingBoxImageView imageView;
     private float[] boundingBox = new float[4];
 
-    private ImageButton recropButton, deleteButton;
+    private ImageButton recropButton, deleteButton, helpButton;
     String originalImagePath;
 
 
@@ -61,6 +65,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
         //imageView = findViewById(R.id.imageView);
         labelSpinner = findViewById(R.id.labelSpinner);
         saveButton = findViewById(R.id.saveButton);
+        helpButton = findViewById(R.id.helpButton);
         imageView = findViewById(R.id.imageView);
         dbHelper = new DBHelper(this);
         recropButton = findViewById(R.id.recropButton);
@@ -76,6 +81,16 @@ public class ImageDetailsActivity extends AppCompatActivity {
         projectId = getIntent().getLongExtra("projectId", -1);
         imageId = getIntent().getLongExtra("imageId", -1);
         loadImageIntoImageView(imagePath);
+
+        // Initialize the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back arrow)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("Add Bounding Box\nTo add a bounding box, first select a label to define the bounding box. Click the box above the image to view the list of label names. Once a desired label name is selected, press down and drag on the image in the direction you would like the box to be drawn.\n\nDelete Bounding Box\nClicking the 'trash can' icon below the image will delete the last bounding box drawn on the image.\n\nResize Image\nTo resize the image, select the 'crop' icon below the image."));
 
         //String og_image_path = dbHelper.getOriginalImagePath(imagePath);
 
@@ -365,6 +380,23 @@ public class ImageDetailsActivity extends AppCompatActivity {
         imageView.getLayoutParams().width = imageWidth;
         imageView.getLayoutParams().height = imageHeight;
         imageView.requestLayout(); // Ensure the changes take effect
+    }
+
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 
 }

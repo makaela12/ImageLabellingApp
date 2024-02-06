@@ -1,5 +1,6 @@
 package com.example.imagelabellingapp;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -9,10 +10,13 @@ import android.view.MotionEvent;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -35,7 +39,7 @@ public class EditImageActivity extends AppCompatActivity {
     private String selectedLabel;
     private float[] boundingBox = new float[4];
     private DBHelper dbHelper;
-    private ImageButton recropButton, deleteButton;
+    private ImageButton recropButton, deleteButton, helpButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +50,21 @@ public class EditImageActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         saveButton = findViewById(R.id.saveButton);
         deleteButton = findViewById(R.id.deleteButton);
+        helpButton = findViewById(R.id.helpButton);
         labelSpinner = findViewById(R.id.labelSpinner);
         recropButton = findViewById(R.id.recropButton);
         dbHelper = new DBHelper(this);
+
+        // Initialize the Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        setSupportActionBar(toolbar);
+
+        // Enable the home button (back arrow)
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // set onClickListener for help button
+        helpButton.setOnClickListener(v -> showHelpPopup("Add Bounding Box\nTo add a bounding box, first select a label to define the bounding box. Click the box above the image to view the list of label names. Once a desired label name is selected, press down and drag on the image in the direction you would like the box to be drawn.\n\nDelete Bounding Box\nClicking the 'trash can' icon below the image will delete the last bounding box drawn on the image.\n\nResize Image\nTo resize the image, select the 'crop' icon below the image."));
+
 
         // Retrieve image details from the intent
         imagePath = getIntent().getStringExtra("imagePath");
@@ -287,5 +303,22 @@ public class EditImageActivity extends AppCompatActivity {
             int color = getLabelColor(label, projectId);
             boundingBox.setColor(color);
         }
+    }
+
+    private void showHelpPopup(String message){
+        // creates a custom dialog
+        Dialog helpDialog = new Dialog(this);
+        helpDialog.setContentView(R.layout.popup_layout); // Create a layout for your popup
+
+        // sets the message in the popup
+        TextView popupMessage = helpDialog.findViewById(R.id.popupMessage);
+        popupMessage.setText(message);
+
+        // sets click listener for the close button in the popup
+        ImageView closeButton = helpDialog.findViewById(R.id.closeButton);
+        closeButton.setOnClickListener(v -> helpDialog.dismiss());
+
+        // show the popup
+        helpDialog.show();
     }
 }
