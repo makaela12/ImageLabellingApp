@@ -336,29 +336,6 @@ public class BoundingBoxImageView extends AppCompatImageView {
         invalidate(); // Redraw the canvas
     }
 
-    // Helper method to get color based on the order of the label for a project
-    private int getLabelColor(String label, long projectId) {
-        // Get the list of labels for the project from the database
-        List<String> projectLabels = dbHelper.getLabelsForProject(projectId);
-
-        // Find the index of the label in the projectLabels list
-        int labelIndex = projectLabels.indexOf(label);
-        Log.d("BOUNDINGBOXIMAGEVIEW TEST", "getLabelColor: INDEX ="+labelIndex +"project labels" + projectLabels);
-
-        // Assign colors based on the index
-        switch (labelIndex) {
-            case 0:
-                return Color.BLUE;
-            case 1:
-                return Color.GREEN;
-            case 2:
-                return Color.RED;
-            // Add more cases as needed
-            default:
-                // Use a default color for labels beyond the defined cases
-                return Color.YELLOW;
-        }
-    }
 
 }
 

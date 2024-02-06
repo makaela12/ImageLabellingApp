@@ -24,7 +24,8 @@
         <activity
             android:name=".EditImageActivity"
             android:exported="false"
-            android:label="Edit Image" />
+            android:label="Edit Image"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -50,7 +51,8 @@
         <activity
             android:name=".ImageDetailsActivity"
             android:exported="false"
-            android:label="Label Image" />
+            android:label="Label Image"
+            android:theme="@style/Theme.ImageLabellingApp.NoActionBar"/>
         <activity
             android:name=".selectProject"
             android:exported="false"

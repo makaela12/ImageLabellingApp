@@ -5,17 +5,17 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/projectNameTextView"
+        android:id="@+id/projectName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="18sp"
         android:textStyle="bold"/>
 
     <TextView
-        android:id="@+id/projectDescriptionTextView"
+        android:id="@+id/projectDescript"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/projectNameTextView"
+        android:layout_below="@id/projectName"
         android:textSize="14sp"
         android:textColor="#A4A4A4"/>
 </RelativeLayout>

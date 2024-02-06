@@ -32,7 +32,7 @@ import java.util.List;
 public class selectProject extends AppCompatActivity {
 
     private ListView projectListView;
-    private ArrayAdapter<String> projectAdapter;
+    SelectAdapter adapter;
     private DBHelper dbHelper;
     private EditText searchEditText;
     private ImageButton searchButton, refreshButton, helpButton;
@@ -93,13 +93,18 @@ public class selectProject extends AppCompatActivity {
         // Retrieve existing project names from the projects table
         ArrayList<String> projectList = getExistingProjects();
 
-        // ArrayAdapter to populate the ListView
-        projectAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, projectList);
-        projectListView.setAdapter(projectAdapter);
+        // Retrieve existing project names from the projects table
+        ArrayList<String> descriptList = getExistingProjDesc();
+
+        // Instantiate the custom adapter with the retrieved lists
+        adapter = new SelectAdapter(this, projectList, descriptList);
+
+        // Set the custom adapter to your ListView
+        projectListView.setAdapter(adapter);
 
         // Set item click listener for the ListView
         projectListView.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedProjectName = projectAdapter.getItem(position);
+            String selectedProjectName = adapter.getItem(position);
             int selectedProjectId = getProjectId(selectedProjectName);
             // Start MainActivity2 and pass the projectId
             Intent intent = new Intent(selectProject.this, MainActivity2.class);
@@ -107,10 +112,11 @@ public class selectProject extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // long click on item in the listView to delete project
         projectListView.setOnItemLongClickListener((parent, view, position, id) -> {
-            String selectedProjectName = projectAdapter.getItem(position);
+            String selectedProjectName = adapter.getItem(position);
             showDeleteConfirmationDialog(selectedProjectName);
-            return true; // to consume the long click event
+            return true;
         });
 
         // used to register the BroadcastReceiver to listen for the "refresh_project_list" broadcast
@@ -137,7 +143,6 @@ public class selectProject extends AppCompatActivity {
         try {
             if (cursor.moveToFirst()) {
                 do {
-                    // error shows warning, not really sure why but it still runs fine.. might need to fix later
                     String projectName = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_PROJECT_NAME));
                     projects.add(projectName);
                 } while (cursor.moveToNext());
@@ -148,6 +153,29 @@ public class selectProject extends AppCompatActivity {
 
         return projects;
     }
+    // Helper method to retrieve existing project names from the projects table
+    private ArrayList<String> getExistingProjDesc() {
+        ArrayList<String> descriptions = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        // Query to retrieve project names
+        String query = "SELECT " + DBHelper.COLUMN_DESCRIPTION + " FROM " + DBHelper.TABLE_PROJECTS;
+
+        Cursor cursor = db.rawQuery(query, null);
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    String projectDesc = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_DESCRIPTION));
+                    descriptions.add(projectDesc);
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+        return descriptions;
+    }
+
     // Helper method to get the project ID based on the project name
     private int getProjectId(String projectName) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -209,9 +237,9 @@ public class selectProject extends AppCompatActivity {
         // Retrieve existing project names from the projects table
         ArrayList<String> projectList = getExistingProjects();
         // Update the ArrayAdapter and notify the ListView
-        projectAdapter.clear();
-        projectAdapter.addAll(projectList);
-        projectAdapter.notifyDataSetChanged();
+        adapter.clear();
+        adapter.addAll(projectList);
+        adapter.notifyDataSetChanged();
     }
 
     private void changeBackArrowColor(Toolbar toolbar, int colorRes) {
@@ -235,9 +263,9 @@ public class selectProject extends AppCompatActivity {
             ArrayList<String> filteredProjects = getFilteredProjects(searchTerm);
 
             // Update the ArrayAdapter and notify the ListView
-            projectAdapter.clear();
-            projectAdapter.addAll(filteredProjects);
-            projectAdapter.notifyDataSetChanged();
+            adapter.clear();
+            adapter.addAll(filteredProjects);
+            adapter.notifyDataSetChanged();
         } else {
             // If the search term is empty, refresh the project list
             refreshProjectList();

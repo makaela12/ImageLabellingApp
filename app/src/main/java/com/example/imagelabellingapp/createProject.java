@@ -94,7 +94,7 @@ public class createProject extends AppCompatActivity {
 
 
         // set onClickListener for help button
-        helpButton.setOnClickListener(v -> showHelpPopup("Labels are used to define particular\nobjects in an image.\n\nTo Create a Label:\n-  Enter a name in the box titled \"Labels\"\n-  Click the '+' to add the label to your\n     project.\n\nClick and hold on a label to edit\nor delete."));
+        helpButton.setOnClickListener(v -> showHelpPopup("Project Name\nEnter a name for your project.\n\nDescription\nEnter a description for your project.\n\nLabels\nLabels are used to define particular\nobjects in an image. Enter a name in the box titled \"Add Label\". Click the '+' to add the label to your project. Click and hold on a label to edit or delete.\n\nImage Size\nImage size will be the pixel dimmensions of each image in your project. Click \"Custom\" to define your own image size. Click \"Fixed\" to use a default image size."));
 
         // initializes adapter for list view
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labelArr); // Use the class-level variable

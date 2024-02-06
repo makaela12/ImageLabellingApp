@@ -128,7 +128,7 @@ public class EditImageActivity extends AppCompatActivity {
 
     }
 
-    private void deleteLastBoundingBox() {
+    /*private void deleteLastBoundingBox() {
         List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);
         // Remove the last drawn bounding box
         Log.d("EditImageActivity", "exisiting boundingBOX u823y94 before delete" + existingBoundingBoxes);
@@ -151,6 +151,29 @@ public class EditImageActivity extends AppCompatActivity {
 
         Log.d("EditImage", "CURRENT LABELS after deletion" + boundingBoxLabels);
 
+    }*/
+    private void deleteLastBoundingBox() {
+        List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);
+        // Remove the last drawn bounding box
+
+        if (existingBoundingBoxes.isEmpty()) {
+            // No bounding boxes to delete, show a message
+            Toast.makeText(this, "No bounding boxes to delete", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Log.d("EditImageActivity", "exisiting boundingBOX u823y94 before delete" + existingBoundingBoxes);
+        BoundingBox lastBoundingBox = existingBoundingBoxes.get(existingBoundingBoxes.size() - 1);
+
+        long lastBoundingBoxId = lastBoundingBox.getId();
+        Log.d("Edit Image Activity", "deleteLastBoundingBox: lastBoundingBox = " + lastBoundingBoxId);
+
+        dbHelper.deleteBoundingBoxById(lastBoundingBoxId);
+        imageView.removeLastBoundingBox();
+        existingBoundingBoxes.remove(existingBoundingBoxes.size() - 1);
+        // Remove the last label from the list
+        if (!boundingBoxLabels.isEmpty()) {
+            boundingBoxLabels.remove(boundingBoxLabels.size() - 1);
+        }
     }
 
     private void loadImageIntoImageView(String imagePath) {

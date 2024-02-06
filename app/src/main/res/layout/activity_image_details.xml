@@ -1,27 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#D3D3D3"
     android:clickable="false"
-    android:foregroundTint="#00747474"
-    tools:visibility="visible">
+    android:foregroundTint="#00747474">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="?attr/actionBarTheme"
+        app:popupTheme="@style/AppTheme.PopupOverlay">
+
+        <ImageButton
+            android:id="@+id/helpButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:background="#00FFFFFF"
+            android:contentDescription="Help"
+            android:foregroundGravity="fill"
+            android:foregroundTint="#FBFBFB"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:tint="#00FFFFFF" />
+
+    </androidx.appcompat.widget.Toolbar>
 
 
     <ImageButton
         android:id="@+id/recropButton"
-        android:layout_width="169dp"
-        android:layout_height="46dp"
+        android:layout_width="140dp"
+        android:layout_height="43dp"
         android:layout_below="@id/rectangleBackground"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="32dp"
+        android:layout_marginStart="60dp"
         android:layout_marginTop="-2dp"
-        android:background="@drawable/edit"
+        android:background="@drawable/shadow"
         android:backgroundTint="#F1F1F1"
         android:elevation="8dp"
-        android:scaleType="fitCenter"
+        android:scaleType="center"
         android:src="@android:drawable/ic_menu_crop"
         android:text="Recrop" />
 
@@ -33,11 +55,12 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="78dp"
-        android:layout_marginEnd="26dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="138dp"
+        android:layout_marginEnd="24dp"
         android:background="@android:drawable/editbox_background_normal"
         android:elevation="9dp" />
+
 
     <com.example.imagelabellingapp.BoundingBoxImageView
         android:id="@+id/imageView"
@@ -47,21 +70,21 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="57dp"
-        android:layout_marginTop="102dp"
+        android:layout_marginStart="59dp"
+        android:layout_marginTop="160dp"
         android:elevation="17dp"
         android:scaleType="centerCrop" />
-
 
     <Spinner
         android:id="@+id/labelSpinner"
         android:layout_width="292dp"
         android:layout_height="60dp"
+        android:layout_below="@id/toolbar"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_marginStart="60dp"
-        android:layout_marginTop="11dp"
+        android:layout_marginTop="65dp"
         android:layout_marginEnd="58dp"
         android:contentDescription="@string/label_spinner_description"
         android:minHeight="48dp" />
@@ -70,29 +93,30 @@
         android:id="@+id/rectangleBackground2"
         android:layout_width="wrap_content"
         android:layout_height="62dp"
+        android:layout_below="@id/toolbar"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_centerInParent="true"
-        android:layout_marginStart="27dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="27dp"
+        android:layout_marginStart="29dp"
+        android:layout_marginTop="64dp"
+        android:layout_marginEnd="25dp"
         android:background="@android:drawable/editbox_background_normal"
         android:elevation="-3dp" />
 
     <ImageButton
         android:id="@+id/deleteButton"
-        android:layout_width="169dp"
-        android:layout_height="46dp"
+        android:layout_width="140dp"
+        android:layout_height="43dp"
         android:layout_below="@id/rectangleBackground"
         android:layout_alignLeft="@id/recropButton"
-        android:layout_marginLeft="178dp"
+        android:layout_marginLeft="154dp"
         android:layout_marginTop="-2dp"
-        android:background="@drawable/edit"
+        android:background="@drawable/shadow"
         android:backgroundTint="#F1F1F1"
         android:clickable="true"
         android:elevation="8dp"
-        android:scaleType="fitCenter"
+        android:scaleType="center"
         android:src="@android:drawable/ic_menu_delete"
         android:text="Recrop"
         android:textSize="24sp"
@@ -104,7 +128,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/recropButton"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="17dp"
+        android:layout_marginTop="14dp"
         android:layout_marginEnd="154dp"
         android:background="@drawable/button_background"
         android:text="Save"

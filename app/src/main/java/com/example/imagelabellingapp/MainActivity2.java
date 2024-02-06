@@ -65,6 +65,10 @@ public class MainActivity2 extends AppCompatActivity {
     private BroadcastReceiver newImageSavedReceiver;
     private BroadcastReceiver labelChangedReceiver;
     private static final int REQUEST_IMAGE_DETAILS = 203;
+    // Declare variables at the beginning of onActivityResult
+    long imageId; // Initialize with a default value
+    String selectedLabel;
+    String originalImagePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,10 +83,12 @@ public class MainActivity2 extends AppCompatActivity {
         exportButton = findViewById(R.id.exportButton);
 
         // set onClickListener for help button
-        helpButton.setOnClickListener(v -> showHelpPopup("To add an image to your\nproject, click the 'Capture'\n or 'Import' buttons below." +
-                "\n\nTo delete an image from your\nproject, click and hold on the\nimage you would like to delete." +
-                "\n\nTo resize the bounding box or\nchange the label of an image\nsimply click on the image to be\nredirected to the 'Edit Image' screen."+
-                "\n\nTo edit your projects name or labels,\n navigate to the menu icon in the top\nright corner and select 'Edit Project'."));
+        helpButton.setOnClickListener(v -> showHelpPopup("Add Image\nTo add an image to your project, click the 'Capture' or 'Import' buttons below." +
+                "\n\nDelete Image\nTo delete an image from your project, click and hold on the image you would like to delete." +
+                "\n\nResize Image\nTo resize the image or add/delete bounding boxes, simply click on the image to be redirected to the image editing page."+
+                "\n\nEdit Project\nTo edit your project details, click the menu icon (i.e., the three dots) in the top right corner and select \"Edit Project\"."+
+                "\n\nView Project Details\nTo view your project details, click the menu icon (i.e., the three dots) in the top right corner and select \"Project Details\"."+
+                "\n\nExport Project\nTo export your project, click the 'Export' icon below."));
 
         // Check if there is saved instance state; allows the ListView with contents to show
         if (savedInstanceState != null) {
@@ -320,10 +326,6 @@ public class MainActivity2 extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    // Declare variables at the beginning of onActivityResult
-    long imageId; // Initialize with a default value
-    String selectedLabel;
-    String originalImagePath;
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d("MainActivity2", "onActivityResult called with requestCode: " + requestCode);
@@ -554,6 +556,7 @@ public class MainActivity2 extends AppCompatActivity {
         Log.d("MainActivity2", "Opening ImageDetailsActivity with Image Path: " + imagePath);
         Intent intent = new Intent(MainActivity2.this, ImageDetailsActivity.class);
         intent.putExtra("imagePath", imagePath);
+        intent.putExtra("originalImagePath", originalImagePath);
         intent.putExtra("projectId", projectId);
         intent.putExtra("imageId", imageId);
         intent.putExtra("selectedLabel", selectedLabel);

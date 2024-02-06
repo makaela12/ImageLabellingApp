@@ -26,13 +26,17 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class ImageDetailsActivity extends AppCompatActivity {
 
 
     //private ImageView imageView;
     private List<String> boundingBoxLabels = new ArrayList<>();
+    private Map<String, Integer> labelColorMap = new HashMap<>();
     private Spinner labelSpinner;
     private Button saveButton;
     private String imagePath;
@@ -43,6 +47,7 @@ public class ImageDetailsActivity extends AppCompatActivity {
     private float[] boundingBox = new float[4];
 
     private ImageButton recropButton, deleteButton;
+    String originalImagePath;
 
 
     DBHelper dbHelper;
@@ -67,13 +72,14 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
         // Retrieve image path, project_id and imageId from the Intent
         imagePath = getIntent().getStringExtra("imagePath");
+        originalImagePath = getIntent().getStringExtra("originalImagePath");
         projectId = getIntent().getLongExtra("projectId", -1);
         imageId = getIntent().getLongExtra("imageId", -1);
         loadImageIntoImageView(imagePath);
 
-        String og_image_path = dbHelper.getOriginalImagePath(imagePath);
+        //String og_image_path = dbHelper.getOriginalImagePath(imagePath);
 
-        recropButton.setOnClickListener(v -> recropImage(imageUri));
+        recropButton.setOnClickListener(v -> recropImage(originalImagePath));
         // Set up label spinner
         loadLabels();
         selectedLabel = labelSpinner.getSelectedItem().toString();
@@ -216,11 +222,11 @@ public class ImageDetailsActivity extends AppCompatActivity {
         finish();
     }
 
-    private void recropImage(Uri imageUri) {
+    private void recropImage(String originalImagePath) {
         // get the image width and height from the database based on the project ID
         int imageWidth = dbHelper.getImageWidth(projectId);
         int imageHeight = dbHelper.getImageHeight(projectId);
-        CropImage.activity(imageUri)
+        CropImage.activity(Uri.fromFile(new File(originalImagePath)))
                 .setGuidelines(CropImageView.Guidelines.ON)
                 .setAspectRatio(imageWidth, imageHeight) // crop the image with user specified aspect ratio
                 .start(this);
@@ -291,37 +297,58 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
         // Find the index of the label in the projectLabels list
         int labelIndex = projectLabels.indexOf(label);
-        Log.d("IMAGEDETAILSACTVIITY TEST", "getLabelColor: INDEX ="+labelIndex +"project labels" + projectLabels);
 
+        // If the color for this label has already been assigned, return it
+        if (labelColorMap.containsKey(label)) {
+            return labelColorMap.get(label);
+        }
+
+        int color;
         // Assign colors based on the index
         switch (labelIndex) {
             case 0:
-                return Color.BLUE;
+                color = Color.BLUE;
+                break;
             case 1:
-                return Color.GREEN;
+                color = Color.GREEN;
+                break;
             case 2:
-                return Color.RED;
+                color = Color.RED;
+                break;
             case 3:
-                return Color.YELLOW;
+                color = Color.YELLOW;
+                break;
             case 4:
-                return Color.rgb(0, 128, 128);
+                color = Color.rgb(0, 128, 128);
+                break;
             case 5:
-                return Color.rgb(0, 100, 0);
+                color = Color.rgb(0, 100, 0);
+                break;
             case 6:
-                return Color.rgb(255, 165, 0);
+                color = Color.rgb(255, 165, 0);
+                break;
             case 7:
-                return Color.rgb(255, 20, 147);
+                color = Color.rgb(255, 20, 147);
+                break;
             case 8:
-                return Color.rgb(0, 0, 128); // Navy
+                color = Color.rgb(0, 0, 128); // Navy
+                break;
             case 9:
-                return Color.rgb(128, 0, 0);
+                color = Color.rgb(128, 0, 0);
+                break;
             case 10:
-                return Color.rgb(169, 169, 169);
+                color =  Color.rgb(169, 169, 169);
+                break;
             // Add more cases as needed
             default:
-                // Use a default color for labels beyond the defined cases
-                return Color.rgb(169, 169, 169); // Dark Gray
+                // Generate a random color
+                Random random = new Random();
+                color = Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+                break;
         }
+        // Save the color for this label in the map for future use
+        labelColorMap.put(label, color);
+        return color;
     }
 
     private void setBoundingBoxImageViewSize(long projectId) {
