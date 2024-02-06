@@ -971,8 +971,80 @@ class DBHelper extends SQLiteOpenHelper {
         return 0; // Default value if not found
     }
 
+    // Method to get label name based on label ID
+    public String getImageDesc(long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String labelName = null;
 
+        Cursor cursor = db.query(TABLE_PROJECTS,
+                new String[]{COLUMN_DESCRIPTION},
+                COLUMN_ID + " = ?",
+                new String[]{String.valueOf(projectId)},
+                null, null, null);
 
+        if (cursor != null && cursor.moveToFirst()) {
+            labelName = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION));
+            cursor.close();
+        }
+        db.close();
+        return labelName;
+    }
+
+    // Method to get the count of labels for a specific project_id
+    public int getLabelCountForProject(long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT COUNT(*) FROM " + TABLE_LABELS +
+                " WHERE " + COLUMN_PROJECT_ID + " = " + projectId;
+
+        Cursor cursor = db.rawQuery(query, null);
+        int count = 0;
+
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+
+        cursor.close();
+        db.close();
+        return count;
+    }
+
+    // Method to get the count of images for a specific project_id
+    public int getImageCountForProject(long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT COUNT(*) FROM " + TABLE_IMAGES +
+                " WHERE " + COLUMN_PROJECT_ID + " = " + projectId;
+
+        Cursor cursor = db.rawQuery(query, null);
+        int count = 0;
+
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+
+        cursor.close();
+        db.close();
+        return count;
+    }
+
+    // Method to get width and height for a specific project_id
+    public int[] getImageSizeForProject(long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT " + COLUMN_IMAGE_WIDTH + ", " + COLUMN_IMAGE_HEIGHT +
+                " FROM " + TABLE_PROJECTS +
+                " WHERE " + COLUMN_ID + " = " + projectId;
+
+        Cursor cursor = db.rawQuery(query, null);
+        int[] size = new int[]{0, 0};
+
+        if (cursor.moveToFirst()) {
+            size[0] = cursor.getInt(0); // Width
+            size[1] = cursor.getInt(1); // Height
+        }
+
+        cursor.close();
+        db.close();
+        return size;
+    }
 
 }
 

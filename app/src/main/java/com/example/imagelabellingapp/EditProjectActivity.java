@@ -18,6 +18,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,7 +38,7 @@ import java.util.Set;
 public class EditProjectActivity extends AppCompatActivity {
 
     private DBHelper dbHelper;
-    private EditText projName, inputLabel;
+    private EditText projName, inputLabel, descript, editTextWidth, editTextHeight;
     private ListView labelList;
     private ArrayAdapter<String> adapter;
     private long projectId;
@@ -44,6 +47,9 @@ public class EditProjectActivity extends AppCompatActivity {
     private Button saveBtn;
     private ImageButton labelAdd;
     private ImageButton helpButton;
+    private RadioGroup radioGroup;
+    private RadioButton radioFixed, radioCustom;
+    private Spinner aspectRatioSpinner;
 
 
     @SuppressLint("MissingInflatedId")
@@ -77,11 +83,23 @@ public class EditProjectActivity extends AppCompatActivity {
         // Initialize views and variables
         projName = findViewById(R.id.projName);
         labelList = findViewById(R.id.labelList);
+        descript = findViewById(R.id.descriptionEditText);
         inputLabel = findViewById(R.id.inputLabel);
         saveBtn = findViewById(R.id.saveBtn);
         labelAdd = findViewById(R.id.labelAdd);
+        radioGroup = findViewById(R.id.radioGroup);
+        radioFixed = findViewById(R.id.radioFixed);
+        radioCustom = findViewById(R.id.radioCustom);
+        aspectRatioSpinner = findViewById(R.id.aspectRatioSpinner);
+        editTextHeight = findViewById(R.id.editTextHeight);
+        editTextWidth = findViewById(R.id.editTextWidth);
+
         labelArr = new ArrayList<>();
         helpButton = findViewById(R.id.helpButton);
+
+
+        // Disable the spinner by default
+        aspectRatioSpinner.setEnabled(false);
 
         // set onClickListener for help button
         helpButton.setOnClickListener(v -> showHelpPopup("To edit the project name,\n click on the current name.\n\nTo edit or delete a label, click\nand hold down on the label."+
@@ -132,6 +150,52 @@ public class EditProjectActivity extends AppCompatActivity {
             }
         });
 
+
+        // Set listeners for radio buttons
+        radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.radioFixed) {
+                // Enable spinner and disable text boxes
+                // Set up the adapter for the aspect ratio spinner
+                ArrayAdapter<CharSequence> aspectRatioAdapter = ArrayAdapter.createFromResource(this,
+                        R.array.aspect_ratio_options, android.R.layout.simple_spinner_item);
+                aspectRatioAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                aspectRatioSpinner.setAdapter(aspectRatioAdapter);
+                aspectRatioSpinner.setEnabled(true);
+                editTextWidth.setEnabled(false);
+                editTextHeight.setEnabled(false);
+            } else if (checkedId == R.id.radioCustom) {
+                // Disable spinner and enable text boxes
+                aspectRatioSpinner.setEnabled(false);
+                editTextWidth.setEnabled(true);
+                editTextHeight.setEnabled(true);
+            }
+            else {
+                // No radio button selected, disable the spinner and enable text boxes
+                aspectRatioSpinner.setEnabled(false);
+                editTextWidth.setEnabled(false);
+                editTextHeight.setEnabled(false);
+            }
+        });
+
+        // Set listener for spinner item selection
+        aspectRatioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // Update width and height text boxes with selected aspect ratio
+                String selectedAspectRatio = (String) parentView.getItemAtPosition(position);
+                String[] aspectRatioParts = selectedAspectRatio.split(" x ");
+                editTextWidth.setText(aspectRatioParts[0]);
+                editTextHeight.setText(aspectRatioParts[1]);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing here
+            }
+        });
+
+
+
         // Set onItemClickListener for labelList (similar to createProject)
         labelList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
@@ -161,18 +225,19 @@ public class EditProjectActivity extends AppCompatActivity {
             }
         });
 
+
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Get the updated project name
                 projectName = projName.getText().toString().trim();
-               // String description = descriptionEditText.getText().toString().trim();
-               // int imageWidth = Integer.parseInt(editTextWidth.getText().toString());
-             //   int imageHeight = Integer.parseInt(editTextHeight.getText().toString());
+                String description = descript.getText().toString().trim();
+                int imageWidth = Integer.parseInt(editTextWidth.getText().toString());
+                int imageHeight = Integer.parseInt(editTextHeight.getText().toString());
 
                 if (!projectName.isEmpty()) {
                     // Update the project name in the database
-                 //   dbHelper.updateProject(projectId, projectName, description, imageWidth, imageHeight);
+                    dbHelper.updateProject(projectId, projectName, description, imageWidth, imageHeight);
                     //long projectId = insertProject(projectName);
 
                     // Process labels (Add new labels to the project)
@@ -236,10 +301,20 @@ public class EditProjectActivity extends AppCompatActivity {
     private void loadProjectDetails(long projectId) {
         // retrieve project details from the database using dbHelper
         String projectName = dbHelper.getProjectName(projectId);
+        int width = dbHelper.getImageWidth(projectId);
+        int height = dbHelper.getImageHeight(projectId);
+        String desc = dbHelper.getImageDesc(projectId);
         ArrayList<String> labels = (ArrayList<String>) dbHelper.getLabelsForProject(projectId);
 
         // set project name and labels to the views
         projName.setText(projectName);
+        editTextHeight.setText(String.valueOf(height));
+        editTextWidth.setText(String.valueOf(width));
+
+        // Set the retrieved values for width and height in editTextWidth and editTextHeight
+        editTextWidth.setText(String.valueOf(width));
+        editTextHeight.setText(String.valueOf(height));
+        descript.setText(desc);
         Log.d("EditProjectActivity", "Loaded project details BEFORE. ProjectName: " + projectName);
         if (labels != null) {
             Log.d("EditProjectActivity", "Loaded project details. Labels: " + labels.toString());

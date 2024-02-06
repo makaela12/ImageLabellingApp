@@ -6,4 +6,9 @@
         android:title="Edit Project"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_project_details"
+        android:title="Project Details"
+        app:showAsAction="never" />
+
 </menu>

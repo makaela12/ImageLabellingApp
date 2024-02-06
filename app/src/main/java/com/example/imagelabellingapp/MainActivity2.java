@@ -184,6 +184,17 @@ public class MainActivity2 extends AppCompatActivity {
                 }
                 return true;
             }
+            if (item.getItemId() == R.id.menu_project_details) {
+                if (projectId != -1) {
+                    Intent projectDetailsIntent = new Intent(MainActivity2.this, projectDetails.class);
+                    projectDetailsIntent.putExtra("projectId", projectId);
+                    startActivity(projectDetailsIntent);
+                    //startActivityForResult(editProjectIntent, REQUEST_CODE);
+                } else {
+                    Log.e("MainActivity2", "Invalid projectId: " + projectId);
+                }
+                return true;
+            }
             return super.onOptionsItemSelected(item);
         });
     }

@@ -18,9 +18,13 @@
         android:theme="@style/Theme.ImageLabellingApp"
         tools:targetApi="31">
         <activity
+            android:name=".projectDetails"
+            android:exported="false"
+            android:label="Project Details"/>
+        <activity
             android:name=".EditImageActivity"
-            android:label="Edit Image"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Edit Image" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/content"
+    android:background="#39E6E6E6"
+    android:elevation="3dp"
+    tools:context=".projectDetails">
+
+    <TextView
+        android:id="@+id/textViewProj"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_marginTop="-376dp"
+        android:text="               Project Name"
+        android:textColor="#898989"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/projName"
+        android:layout_width="289dp"
+        android:layout_height="42dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="49dp"
+        android:layout_marginTop="34dp"
+        android:background="@android:drawable/gallery_thumb"
+        android:ems="10"
+        android:enabled="false"
+        android:inputType="textPersonName"
+        android:textColor="#373737"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/textViewDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_marginTop="-298dp"
+        android:text="                Description"
+        android:textColor="#898989"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/descriptionEditText"
+        android:layout_width="286dp"
+        android:layout_height="74dp"
+        android:layout_below="@id/projName"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="52dp"
+        android:layout_marginTop="36dp"
+        android:background="@android:drawable/gallery_thumb"
+        android:enabled="false"
+        android:gravity="top|start"
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:maxLines="3"
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        android:textColor="#4D4D4D"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/textViewlbllist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_marginTop="-189dp"
+        android:text="                 Labels"
+        android:textColor="#898989"
+        android:textSize="14sp" />
+
+    <ListView
+        android:id="@+id/labelList"
+        android:layout_width="wrap_content"
+        android:layout_height="168dp"
+        android:layout_below="@id/descriptionEditText"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="53dp"
+        android:layout_marginTop="36dp"
+        android:layout_marginEnd="75dp"
+        android:layout_weight="1"
+        android:background="@android:drawable/gallery_thumb"
+        android:choiceMode="none"
+        android:clickable="false"
+        android:elevation="-5dp"
+        android:fadingEdge="vertical|none"></ListView>
+
+    <TextView
+        android:id="@+id/textViewLabelNum"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="22dp"
+        android:text="No. of Labels : "
+        android:textColor="#898989"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/textViewLabelCount"
+        android:layout_width="117dp"
+        android:layout_height="41dp"
+        android:layout_below="@id/labelList"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="217dp"
+        android:layout_marginTop="13dp"
+        android:background="@android:drawable/gallery_thumb"
+        android:text=""
+        android:textColor="#4C4C4C"
+        android:textSize="16sp" />
+
+
+    <TextView
+        android:id="@+id/textViewImageSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="79dp"
+        android:text="Image Size :"
+        android:textColor="#898989"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/textViewImgSize"
+        android:layout_width="117dp"
+        android:layout_height="41dp"
+        android:layout_below="@+id/textViewLabelCount"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="218dp"
+        android:layout_marginTop="17dp"
+        android:background="@android:drawable/gallery_thumb"
+        android:text=""
+        android:textColor="#484848"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/textViewCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelList"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="139dp"
+        android:text="Image Count : "
+        android:textColor="#898989"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/textViewImageCount"
+        android:layout_width="117dp"
+        android:layout_height="41dp"
+        android:layout_below="@+id/textViewImgSize"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="218dp"
+        android:layout_marginTop="17dp"
+        android:background="@android:drawable/gallery_thumb"
+        android:text=""
+        android:textColor="#464646"
+        android:textSize="16sp" />
+
+</RelativeLayout>

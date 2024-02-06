@@ -64,8 +64,6 @@ public class createProject extends AppCompatActivity {
         labelAdd = findViewById(R.id.labelAdd);
         inputLabel = findViewById(R.id.inputLabel);
         projName = findViewById(R.id.projName);
-        projTitle = findViewById(R.id.projTitle);
-        labelTitle = findViewById(R.id.projTitle);
         labelArr = new ArrayList<>();
         saveBtn = findViewById(R.id.saveBtn);
         helpButton = findViewById(R.id.helpButton);
