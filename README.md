@@ -1,4 +1,4 @@
-CAPSTONE PROJECT - IMAGE LABELLING ANDROID APPLICATION
+CAPSTONE PROJECT - IMAGE LABELLING ANDROID APPLICATION... IN PROGRESS
 
 The goal of this project is to create an application that allows users to gather and label images from a mobile device, in order to create datasets that can be used to train machine learning models. 
 
