@@ -732,8 +732,6 @@ public class MainActivity2 extends AppCompatActivity {
                 // Get the width and height of the image
                 int imageWidth = options.outWidth;
                 int imageHeight = options.outHeight;
-                // Write YOLO format label file
-                zipOutputStream.putNextEntry(new ZipEntry("labels/" + getFileNameWithoutExtension(imagePath)));
 
                 // Normalize the values to be in the range of 0-1
                 float normalizedXCenter = (boundingBox[0] + boundingBox[2]) / (2 * imageWidth);
@@ -741,22 +739,23 @@ public class MainActivity2 extends AppCompatActivity {
                 float normalizedWidth = (boundingBox[2] - boundingBox[0]) / imageWidth;
                 float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;
 
-                String labelData = String.format("%d %.6f %.6f %.6f %.6f",
-                        labelNames.indexOf(label),     // Object class index
-                        normalizedXCenter,             // x-center (normalized)
-                        normalizedYCenter,             // y-center (normalized)
-                        normalizedWidth,               // width (normalized)
-                        normalizedHeight);             // height (normalized)
-               /* String labelData = String.format("%d %.6f %.6f %.6f %.6f",
-                        labelNames.indexOf(label), // Object class index
-                        (boundingBox[0] + boundingBox[2]) / 2, // x-center
-                        (boundingBox[1] + boundingBox[3]) / 2, // y-center
-                        (boundingBox[2] - boundingBox[0]),    // width
-                        (boundingBox[3] - boundingBox[1]));   // height*/
-                zipOutputStream.write(labelData.getBytes());
+                // Write YOLO format label file
+                String labelFileName = getFileNameWithoutExtension(imagePath) + ".txt";
+                zipOutputStream.putNextEntry(new ZipEntry("labels/" + labelFileName));
+
+// Write the YOLO format annotation for the bounding box
+                String yoloAnnotation = String.format("%d %.6f %.6f %.6f %.6f\n",
+                        labelNames.indexOf(label),       // Object class index
+                        normalizedXCenter,               // x-center (normalized)
+                        normalizedYCenter,               // y-center (normalized)
+                        normalizedWidth,                 // width (normalized)
+                        normalizedHeight);               // height (normalized)
+                zipOutputStream.write(yoloAnnotation.getBytes());
+                zipOutputStream.closeEntry();
 
                 // Copy image file
-                zipOutputStream.putNextEntry(new ZipEntry("images/" + getFileNameWithoutExtension(imagePath)));
+                String imageFileName = getFileNameWithoutExtension(imagePath) + ".jpg";
+                zipOutputStream.putNextEntry(new ZipEntry("images/" + imageFileName));
                 zipOutputStream.write(getFileBytes(new File(imagePath)));
                 zipOutputStream.closeEntry();
             }
