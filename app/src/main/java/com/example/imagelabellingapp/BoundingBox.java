@@ -59,6 +59,11 @@ public class BoundingBox {
         return id;
     }
 
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public long getLabelId() {
         return labelId;
     }
@@ -70,5 +75,6 @@ public class BoundingBox {
     public void setColor(int color) {
         this.color = color;
     }
+
 
 }

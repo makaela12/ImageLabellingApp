@@ -9,6 +9,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 class DBHelper extends SQLiteOpenHelper {
 
@@ -89,7 +90,7 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_IMAGE_PATH + " TEXT," +
                 COLUMN_ORIGINAL_IMAGE_PATH + " TEXT);";
 
-       // Create Bounding Box table
+      /* // Create Bounding Box table
         String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
                 COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 COLUMN_PROJECT_ID + " INTEGER," +
@@ -101,6 +102,21 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_BBOX_Y_MIN + " REAL," +
                 COLUMN_BBOX_X_MAX + " REAL," +
                 COLUMN_BBOX_Y_MAX + " REAL," +
+                "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
+                "FOREIGN KEY (" + COLUMN_ID + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_ID + ")," +
+                "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + ")," +
+                "FOREIGN KEY (" + COLUMN_PROJECT_ID + ") REFERENCES " + TABLE_PROJECTS + "(" + COLUMN_ID + "));";*/
+        String createBBoxesTableQuery = "CREATE TABLE IF NOT EXISTS " + TABLE_BBOXES + " (" +
+                COLUMN_BBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                COLUMN_PROJECT_ID + " INTEGER," +
+                COLUMN_IMAGE_ID + " INTEGER," +
+                COLUMN_LABEL_NAME + " TEXT," +
+                COLUMN_ID + " INTEGER," +
+                COLUMN_COLOUR + " INTEGER, " +
+                COLUMN_BBOX_X_MIN + " TEXT," +  // Use REAL type for floating-point numbers
+                COLUMN_BBOX_Y_MIN + " TEXT," +  // Use REAL type for floating-point numbers
+                COLUMN_BBOX_X_MAX + " TEXT," +  // Use REAL type for floating-point numbers
+                COLUMN_BBOX_Y_MAX + " TEXT," +  // Use REAL type for floating-point numbers
                 "FOREIGN KEY (" + COLUMN_IMAGE_ID + ") REFERENCES " + TABLE_IMAGES + "(" + COLUMN_IMAGE_ID + ")," +
                 "FOREIGN KEY (" + COLUMN_ID + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_ID + ")," +
                 "FOREIGN KEY (" + COLUMN_LABEL_NAME + ") REFERENCES " + TABLE_LABELS + "(" + COLUMN_LABEL_NAME + ")," +
@@ -657,12 +673,11 @@ class DBHelper extends SQLiteOpenHelper {
         );
     }
 
-    // In your DBHelper class
+
     public float[] getBoundingBoxForExport(long imageId) {
         SQLiteDatabase db = this.getReadableDatabase();
         float[] boundingBox = new float[4];
 
-        // TODO: Query the database to retrieve bounding box values based on the imageId
         // Example query: "SELECT bbox_x_min, bbox_y_min, bbox_x_max, bbox_y_max FROM bboxes WHERE image_id = ?"
         Cursor cursor = db.rawQuery("SELECT " + COLUMN_BBOX_X_MIN + ", " + COLUMN_BBOX_Y_MIN + ", " +
                 COLUMN_BBOX_X_MAX + ", " + COLUMN_BBOX_Y_MAX +
@@ -680,7 +695,59 @@ class DBHelper extends SQLiteOpenHelper {
         return boundingBox;
     }
 
-    // Method to update bounding box coordinates in the database
+    public List<float[]> getBoundingBoxesForExport(long imageId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        List<float[]> boundingBoxes = new ArrayList<>();
+
+        // Query to retrieve all bounding boxes for the given image ID
+        Cursor cursor = db.query(TABLE_BBOXES,
+                new String[]{COLUMN_BBOX_X_MIN, COLUMN_BBOX_Y_MIN, COLUMN_BBOX_X_MAX, COLUMN_BBOX_Y_MAX},
+                COLUMN_IMAGE_ID + " = ?",
+                new String[]{String.valueOf(imageId)},
+                null, null, null);
+
+        // Iterate through the cursor and add each bounding box to the list
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                float[] boundingBox = new float[4];
+                boundingBox[0] = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MIN)); // x_min
+                boundingBox[1] = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MIN)); // y_min
+                boundingBox[2] = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_X_MAX)); // x_max
+                boundingBox[3] = cursor.getFloat(cursor.getColumnIndex(COLUMN_BBOX_Y_MAX)); // y_max
+                boundingBoxes.add(boundingBox);
+            }
+            cursor.close();
+        }
+
+        db.close();
+        return boundingBoxes;
+    }
+
+    public long getLabelIdForBBox(long imageId, float left, float top, float right, float bottom) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        long labelId = -1;
+
+        String[] columns = {COLUMN_ID};
+        String selection = COLUMN_IMAGE_ID + " = ? AND " +
+                COLUMN_BBOX_X_MIN + " = ? AND " +
+                COLUMN_BBOX_Y_MIN + " = ? AND " +
+                COLUMN_BBOX_X_MAX + " = ? AND " +
+                COLUMN_BBOX_Y_MAX + " = ?";
+        String[] selectionArgs = {String.valueOf(imageId), String.valueOf(left), String.valueOf(top), String.valueOf(right), String.valueOf(bottom)};
+
+        Cursor cursor = db.query(TABLE_BBOXES, columns, selection, selectionArgs, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID)); // Change to COLUMN_LABEL_ID
+            cursor.close();
+        }
+
+        db.close();
+        return labelId;
+    }
+
+
+            // Method to update bounding box coordinates in the database
     public void updateBoundingBoxCoordinates(long imageId, float xMin, float yMin, float xMax, float yMax) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -780,12 +847,18 @@ class DBHelper extends SQLiteOpenHelper {
     public long insertBoundingBox(long imageId, float xMin, float yMin, float xMax, float yMax, String label, long projectId, long label_id, int color) {
         SQLiteDatabase db = this.getWritableDatabase();
 
+        // Convert floating-point coordinates to text with three numbers after the decimal point
+        String xMinText = String.format(Locale.US, "%.3f", xMin);
+        String yMinText = String.format(Locale.US, "%.3f", yMin);
+        String xMaxText = String.format(Locale.US, "%.3f", xMax);
+        String yMaxText = String.format(Locale.US, "%.3f", yMax);
+
         ContentValues values = new ContentValues();
         values.put(COLUMN_IMAGE_ID, imageId);
-        values.put(COLUMN_BBOX_X_MIN, xMin);
-        values.put(COLUMN_BBOX_Y_MIN, yMin);
-        values.put(COLUMN_BBOX_X_MAX, xMax);
-        values.put(COLUMN_BBOX_Y_MAX, yMax);
+        values.put(COLUMN_BBOX_X_MIN, xMinText);
+        values.put(COLUMN_BBOX_Y_MIN, yMinText);
+        values.put(COLUMN_BBOX_X_MAX, xMaxText);
+        values.put(COLUMN_BBOX_Y_MAX, yMaxText);
         values.put(COLUMN_LABEL_NAME, label);
         values.put(COLUMN_PROJECT_ID, projectId);
         values.put(COLUMN_ID, label_id);
@@ -1045,6 +1118,26 @@ class DBHelper extends SQLiteOpenHelper {
         db.close();
         return size;
     }
+
+    public int getLabelIdForNameAndProject(String labelName, long projectId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int labelId = -1; // Default value if label ID is not found
+
+        String query = "SELECT " + COLUMN_ID +
+                " FROM " + TABLE_LABELS +
+                " WHERE " + COLUMN_LABEL_NAME + " = ?" +
+                " AND " + COLUMN_PROJECT_ID + " = ?";
+
+        Cursor cursor = db.rawQuery(query, new String[]{labelName, String.valueOf(projectId)});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            labelId = cursor.getInt(cursor.getColumnIndex(COLUMN_ID));
+            cursor.close();
+        }
+
+        return labelId;
+    }
+
 
 }
 
