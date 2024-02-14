@@ -22,6 +22,12 @@ public class BoundingBox {
         this.labelId = labelId;
         this.color = color;
 
+        // Set individual coordinates
+        this.left = coordinates[0];
+        this.top = coordinates[1];
+        this.right = coordinates[2];
+        this.bottom = coordinates[3];
+
 
     }
 
@@ -57,6 +63,11 @@ public class BoundingBox {
     }
     public long getId() {
         return id;
+    }
+
+
+    public float[] getCoordinates() {
+        return coordinates;
     }
 
 

@@ -725,7 +725,13 @@ class DBHelper extends SQLiteOpenHelper {
 
     public long getLabelIdForBBox(long imageId, float left, float top, float right, float bottom) {
         SQLiteDatabase db = this.getReadableDatabase();
-        long labelId = -1;
+        long labelId = 1;
+
+        // Format the bounding box coordinates to ensure three decimal places
+        String leftFormatted = String.format("%.3f", left);
+        String topFormatted = String.format("%.3f", top);
+        String rightFormatted = String.format("%.3f", right);
+        String bottomFormatted = String.format("%.3f", bottom);
 
         String[] columns = {COLUMN_ID};
         String selection = COLUMN_IMAGE_ID + " = ? AND " +
@@ -733,12 +739,13 @@ class DBHelper extends SQLiteOpenHelper {
                 COLUMN_BBOX_Y_MIN + " = ? AND " +
                 COLUMN_BBOX_X_MAX + " = ? AND " +
                 COLUMN_BBOX_Y_MAX + " = ?";
-        String[] selectionArgs = {String.valueOf(imageId), String.valueOf(left), String.valueOf(top), String.valueOf(right), String.valueOf(bottom)};
+        String[] selectionArgs = {String.valueOf(imageId), leftFormatted, topFormatted, rightFormatted, bottomFormatted};
+        //String[] selectionArgs = {String.valueOf(imageId), String.valueOf(left), String.valueOf(top), String.valueOf(right), String.valueOf(bottom)};
 
         Cursor cursor = db.query(TABLE_BBOXES, columns, selection, selectionArgs, null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
-            labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID)); // Change to COLUMN_LABEL_ID
+            labelId = cursor.getLong(cursor.getColumnIndex(COLUMN_ID));
             cursor.close();
         }
 
@@ -791,6 +798,8 @@ class DBHelper extends SQLiteOpenHelper {
 
         return fileNames;
     }
+
+
 
     // Retrieve all bounding boxes associated with a specific image ID
     public List<BoundingBox> getBoundingBoxesForImage(long imageId) {

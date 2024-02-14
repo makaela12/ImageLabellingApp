@@ -106,6 +106,14 @@ public class ImageDetailsActivity extends AppCompatActivity {
 
         // Set up touch listener for drawing bounding box on the image
         imageView.setOnTouchListener((v, event) -> {
+            // Retrieve image dimensions from the database
+            int imageWidth = dbHelper.getImageWidth(projectId);
+            int imageHeight = dbHelper.getImageHeight(projectId);
+
+            // Calculate the scale factors to map touch coordinates to image coordinates
+            float scaleX = (float) imageWidth / (float) imageView.getWidth();
+            float scaleY = (float) imageHeight / (float) imageView.getHeight();
+
             if (labelSpinner.getSelectedItem() != null) {
                 String selectedLabel = labelSpinner.getSelectedItem().toString();
                 int color = getLabelColor(selectedLabel, projectId);
@@ -114,18 +122,37 @@ public class ImageDetailsActivity extends AppCompatActivity {
                         case MotionEvent.ACTION_DOWN:
                                 // Handle touch down event
                                 boundingBox = new float[4];
-                                boundingBox[0] = event.getX();
-                                boundingBox[1] = event.getY();
+                                boundingBox[0] = ((event.getX() * scaleX)/imageWidth) * imageView.getWidth();
+                                //boundingBox[0] = event.getX() * scaleX;
+                                //boundingBox[1] = event.getY() * scaleY;
+                                boundingBox[1] = ((event.getY() * scaleY)/imageHeight) * imageView.getHeight();
+                            Log.d("getX1r", "onCreate: "+ boundingBox[0]);
+                            Log.d("getY1r", "onCreate: "+ boundingBox[1]);
+
                                 break;
                         case MotionEvent.ACTION_MOVE:
                             // Handle touch move event
-                                boundingBox[2] = event.getX();
-                                boundingBox[3] = event.getY();
+                                boundingBox[2] = ((event.getX() * scaleX)/imageWidth) * imageView.getWidth();
+                                //boundingBox[3] = event.getY() * scaleY;
+                                boundingBox[3] = ((event.getY() * scaleY)/imageHeight) * imageView.getHeight();
+                                Log.d("getX2r", "onCreate: "+ boundingBox[2]);
+                                Log.d("getY2r", "onCreate: "+ boundingBox[3]);
                                 imageView.drawBoundingBox(boundingBox, selectedLabel, projectId, color);
                                 break;
                         case MotionEvent.ACTION_UP:
                                 long lid = dbHelper.getLabelIdForProjectAndLabel(projectId,selectedLabel);
-                                long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel, projectId,lid, color);
+                                // making coords go from 1050x1050 ratio to imageWidthximageHeight (defined by user when creating projetct))
+                                float x1 = (boundingBox[0]/imageView.getWidth()) * imageWidth;
+                                float y1 = (boundingBox[1]/imageView.getHeight()) * imageHeight;
+                                float x2 = (boundingBox[2]/imageView.getWidth()) * imageWidth;
+                                float y2 = (boundingBox[3]/imageView.getHeight()) * imageHeight;
+                                Log.d("x1 in DATABASE", "onCreate: "+ x1);
+                                Log.d("y1 in DATABASE", "onCreate: "+ y1);
+                                Log.d("x2 in DATABASE", "onCreate: "+ x2);
+                                Log.d("y2 in DATABASE", "onCreate: "+ y2);
+
+                               // long bbox_id = dbHelper.insertBoundingBox(imageId, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3], selectedLabel, projectId,lid, color);
+                                long bbox_id = dbHelper.insertBoundingBox(imageId, x1, y1, x2, y2, selectedLabel, projectId,lid, color);
                                 long label_id = dbHelper.getLabelIdForBoundingBox(selectedLabel,bbox_id);
                                 imageView.addBoundingBox(boundingBox, selectedLabel,bbox_id,label_id,color);
                                 // Add the corresponding label to the list
@@ -143,6 +170,8 @@ public class ImageDetailsActivity extends AppCompatActivity {
         });
 
     }
+
+
 
     private void deleteLastBoundingBox() {
         List<BoundingBox> existingBoundingBoxes = dbHelper.getBoundingBoxesForImage(imageId);

@@ -691,7 +691,6 @@ public class MainActivity2 extends AppCompatActivity {
         List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
         List<String> labelNames = dbHelper.getLabelsForProject(projectId);
 
-
         // Create a zip file
         File exportZipFile = new File(getExternalFilesDir(null), projectName + ".zip");
 
@@ -727,19 +726,35 @@ public class MainActivity2 extends AppCompatActivity {
                     long labelId = dbHelper.getLabelIdForBBox(i_id, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
 
                     Log.d("*******IMAGE ID", "exportProjectYOLO: "+ i_id + " ");
-                    Log.d("*******LABEL NAME", "exportProjectYOLO: "+ labelId + " ");
+                    Log.d("*******LABEL ID", "exportProjectYOLO: "+ labelId + " ");
                     // Load the image dimensions
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inJustDecodeBounds = true;
                     BitmapFactory.decodeFile(imagePath, options);
-                    int imageWidth = options.outWidth;
-                    int imageHeight = options.outHeight;
+                    int imageWidth = dbHelper.getImageWidth(projectId);
+                    int imageHeight = dbHelper.getImageHeight(projectId);
+                    Log.d("*******HEIGHT", "exportProjectYOLO: "+ imageHeight + " ");
+                    Log.d("*******WIDTH", "exportProjectYOLO: "+ imageWidth + " ");
+                    Log.d("BoundingBox Coords", "exportProjectYOLO: "+ boundingBox[0] + " "+ boundingBox[1] + " "+ boundingBox[2] + " "+ boundingBox[3] + " ");
+                    // Normalize the bounding box coordinates
+                    float nX1 = boundingBox[0] / imageWidth;
+                    float nY1 = boundingBox[1] / imageHeight;
+                    float nX2 = boundingBox[2] / imageWidth;
+                    float nY2 = boundingBox[3] / imageHeight;
+                    Log.d("BoundingBox CoordsAFTER*****", "exportProjectYOLO: "+ nX1 + " "+ nY1 + " "+ nX2 + " "+ nY2 + " ");
 
                     // Normalize the bounding box coordinates
+                    float normalizedXCenter = (nX1 + nX2) / 2;
+                    float normalizedYCenter = (nY1 + nY2) / 2;
+                    float normalizedWidth = nX2 - nX1;
+                    float normalizedHeight = nY2 - nY1;
+
+                  /*  // Normalize the bounding box coordinates
                     float normalizedXCenter = (boundingBox[0] + boundingBox[2]) / (2 * imageWidth);
                     float normalizedYCenter = (boundingBox[1] + boundingBox[3]) / (2 * imageHeight);
                     float normalizedWidth = (boundingBox[2] - boundingBox[0]) / imageWidth;
-                    float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;
+                    float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;*/
+                    Log.d("NORMALIZED COORDS", "exportProjectYOLO: "+ normalizedXCenter + " "+ normalizedYCenter + " "+ normalizedWidth + " "+ normalizedHeight + " ");
 
                     // Write YOLO format annotation for the current bounding box
                     String yoloAnnotation = String.format(Locale.US, "%d %.6f %.6f %.6f %.6f\n",
@@ -760,63 +775,6 @@ public class MainActivity2 extends AppCompatActivity {
                 zipOutputStream.write(getFileBytes(new File(imagePath)));
                 zipOutputStream.closeEntry();
             }
-
-
-/*
-            // Process each image
-            for (String imagePath : imagePaths) {
-
-                //String label = dbHelper.getCurrentLabelForImage(dbHelper.getImageIdFromPath(imagePath));
-                // Retrieve bounding box information from the database
-                //float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
-
-                // TODO: need to figure out how to get bounding box label name from bboxes table... the values being retreieved are not correct and its causing the label id to be -1
-                float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
-
-                long i_id = dbHelper.getImageIdFromPath(imagePath);
-                //String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
-                //Log.d("*******LABEL NAME", "exportProjectYOLO:"+ label + " ");
-                //int labelId = dbHelper.getLabelIdForNameAndProject(label, projectId);
-                Log.d("*******BBOX COOrDS", String.format(Locale.US, "exportProjectYOLO: 1:%f  2:%f  3:%f  4:%f",
-                        boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]));
-                Log.d("*******IMAGE ID", "exportProjectYOLO: "+ i_id + " ");
-                long labelId = dbHelper.getLabelIdForBBox(i_id,boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
-                Log.d("*******LABEL NAME", "exportProjectYOLO: "+ labelId + " ");
-                // Load the image using its path
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inJustDecodeBounds = true; // This will only get the image dimensions, not load the entire image into memory
-                BitmapFactory.decodeFile(imagePath, options);
-
-                // Get the width and height of the image
-                int imageWidth = options.outWidth;
-                int imageHeight = options.outHeight;
-
-                // Normalize the values to be in the range of 0-1
-                float normalizedXCenter = (boundingBox[0] + boundingBox[2]) / (2 * imageWidth);
-                float normalizedYCenter = (boundingBox[1] + boundingBox[3]) / (2 * imageHeight);
-                float normalizedWidth = (boundingBox[2] - boundingBox[0]) / imageWidth;
-                float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;
-
-                // Write YOLO format label file
-                String labelFileName = getFileNameWithoutExtension(imagePath) + ".txt";
-                zipOutputStream.putNextEntry(new ZipEntry("labels/" + labelFileName));
-
-// Write the YOLO format annotation for the bounding box
-                String yoloAnnotation = String.format("%d %.6f %.6f %.6f %.6f\n",
-                        labelId,       // Object class index
-                        normalizedXCenter,               // x-center (normalized)
-                        normalizedYCenter,               // y-center (normalized)
-                        normalizedWidth,                 // width (normalized)
-                        normalizedHeight);               // height (normalized)
-                zipOutputStream.write(yoloAnnotation.getBytes());
-                zipOutputStream.closeEntry();
-
-                // Copy image file
-                String imageFileName = getFileNameWithoutExtension(imagePath) + ".jpg";
-                zipOutputStream.putNextEntry(new ZipEntry("images/" + imageFileName));
-                zipOutputStream.write(getFileBytes(new File(imagePath)));
-                zipOutputStream.closeEntry();
-            }*/
 
         } catch (Exception e) {
             e.printStackTrace();
