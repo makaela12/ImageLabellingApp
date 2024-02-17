@@ -44,8 +44,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 
 public class MainActivity2 extends AppCompatActivity {
     ImageButton selectButton, takeButton, helpButton, exportButton;
@@ -239,7 +240,11 @@ public class MainActivity2 extends AppCompatActivity {
                 if ("YOLO (You Only Look Once)".equals(selectedFormat)) {
                     exportProjectYOLO();
                 } else if ("COCO (Common Objects in Context)".equals(selectedFormat)) {
-                    exportProjectCOCO();
+                    try {
+                        exportProjectCOCO();
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 dialogInterface.dismiss();
             }
@@ -684,6 +689,119 @@ public class MainActivity2 extends AppCompatActivity {
         helpDialog.show();
     }
 
+    private void exportProjectCOCO() throws JSONException {
+        // Get project details
+        String projectName = dbHelper.getProjectName(projectId);
+        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
+        List<String> labelNames = dbHelper.getLabelsForProject(projectId);
+        Log.d("LABELNAMES", "exportProjectCOCO: label names: "+ labelNames);
+        String projectDescription = dbHelper.getProjectDescription(projectId);
+
+        // Create COCO JSON structure
+        JSONObject cocoJson = new JSONObject();
+
+        // Create 'info' section
+        JSONObject info = new JSONObject();
+        info.put("description", projectDescription);
+        info.put("date_created", getCurrentDate());
+        cocoJson.put("info", info);
+
+        // Create 'categories' section
+        JSONArray categories = new JSONArray();
+        for (int i = 0; i < labelNames.size(); i++) {
+            JSONObject category = new JSONObject();
+            category.put("id", i + 1); // IDs start from 1 in COCO format
+            category.put("name", labelNames.get(i));
+            category.put("supercategory", projectName);
+            categories.put(category);
+        }
+        cocoJson.put("categories", categories);
+
+        // Create 'images' section
+        JSONArray images = new JSONArray();
+        for (String imagePath : imagePaths) {
+            JSONObject image = new JSONObject();
+            image.put("id", images.length() + 1); // IDs start from 1 in COCO format
+            image.put("width", getImageWidth(imagePath));
+            image.put("height", getImageHeight(imagePath));
+            image.put("file_name", getFileNameWithoutExtension(imagePath));
+            images.put(image);
+        }
+        cocoJson.put("images", images);
+
+        // Create annotations section
+        JSONArray annotations = new JSONArray();
+        for (String imagePath : imagePaths) {
+            List<float[]> boundingBoxes = dbHelper.getBoundingBoxesForExport(dbHelper.getImageIdFromPath(imagePath));
+            long i_id = dbHelper.getImageIdFromPath(imagePath);
+
+
+            for (float[] boundingBox : boundingBoxes) {
+                Log.d("BoundingBox Coords", "exportProjectCOCO: " + boundingBox[0] + " " + boundingBox[1] + " " + boundingBox[2] + " " + boundingBox[3] + " ");
+
+                String label = dbHelper.getLabelNameForBoundingBox(i_id, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
+                Log.d("GET LABEL FROM BBOX", "exportProjectCOCO: " + label);
+
+                JSONObject annotation = new JSONObject();
+                annotation.put("id", annotations.length() + 1); // IDs start from 1 in COCO format
+                annotation.put("image_id", getImageId(imagePath, images));
+                annotation.put("category_id", labelNames.indexOf(label) + 1); // IDs start from 1 in COCO format
+                annotation.put("area", calculateArea(boundingBox));
+                annotation.put("bbox", new JSONArray(boundingBox)); // x, y, width, height
+                annotations.put(annotation);
+            }
+        }
+        cocoJson.put("annotations", annotations);
+
+        // Create a zip file
+        File exportZipFile = new File(getExternalFilesDir(null), projectName + "_COCO" + ".zip");
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(exportZipFile))) {
+            // Create data folder entry
+            zipOutputStream.putNextEntry(new ZipEntry("data/"));
+            zipOutputStream.closeEntry();
+            // Write image files into the data folder
+            for (String imagePath : imagePaths) {
+                File imageFile = new File(imagePath);
+                String imageFileName = getFileNameWithoutExtension(imageFile.getName()) + ".jpg";
+                zipOutputStream.putNextEntry(new ZipEntry("data/" + imageFileName));
+                try (InputStream is = new FileInputStream(imageFile)) {
+                    byte[] buffer = new byte[1024];
+                    int length;
+                    while ((length = is.read(buffer)) > 0) {
+                        zipOutputStream.write(buffer, 0, length);
+                    }
+                }
+                zipOutputStream.closeEntry();
+            }
+            // Write labels.json file
+            zipOutputStream.putNextEntry(new ZipEntry("labels.json"));
+            zipOutputStream.write(cocoJson.toString().getBytes());
+            zipOutputStream.closeEntry();
+        } catch (IOException e) {
+            e.printStackTrace();
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Error exporting project: ZIP error", Toast.LENGTH_SHORT).show();
+            });
+            return;
+        }
+        // Create a URI for the exported ZIP file
+        Uri uri = FileProvider.getUriForFile(this, "com.example.imagelabellingapp.fileprovider", exportZipFile);
+
+        // Create a sharing intent
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("application/zip");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+
+        // Check if there is any application that can handle the sharing intent
+        if (shareIntent.resolveActivity(getPackageManager()) != null) {
+            // Start the sharing activity
+            startActivity(Intent.createChooser(shareIntent, "Share via..."));
+        } else {
+            // Display a message that no app can handle the sharing intent
+            Toast.makeText(this, "No app can handle the sharing intent", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private void exportProjectYOLO() {
         // Get project details
@@ -725,36 +843,30 @@ public class MainActivity2 extends AppCompatActivity {
                     long i_id = dbHelper.getImageIdFromPath(imagePath);
                     long labelId = dbHelper.getLabelIdForBBox(i_id, boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]);
 
-                    Log.d("*******IMAGE ID", "exportProjectYOLO: "+ i_id + " ");
-                    Log.d("*******LABEL ID", "exportProjectYOLO: "+ labelId + " ");
+                    Log.d("*******IMAGE ID", "exportProjectYOLO: " + i_id + " ");
+                    Log.d("*******LABEL ID", "exportProjectYOLO: " + labelId + " ");
                     // Load the image dimensions
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inJustDecodeBounds = true;
                     BitmapFactory.decodeFile(imagePath, options);
                     int imageWidth = dbHelper.getImageWidth(projectId);
                     int imageHeight = dbHelper.getImageHeight(projectId);
-                    Log.d("*******HEIGHT", "exportProjectYOLO: "+ imageHeight + " ");
-                    Log.d("*******WIDTH", "exportProjectYOLO: "+ imageWidth + " ");
-                    Log.d("BoundingBox Coords", "exportProjectYOLO: "+ boundingBox[0] + " "+ boundingBox[1] + " "+ boundingBox[2] + " "+ boundingBox[3] + " ");
+                    Log.d("*******HEIGHT", "exportProjectYOLO: " + imageHeight + " ");
+                    Log.d("*******WIDTH", "exportProjectYOLO: " + imageWidth + " ");
+                    Log.d("BoundingBox Coords", "exportProjectYOLO: " + boundingBox[0] + " " + boundingBox[1] + " " + boundingBox[2] + " " + boundingBox[3] + " ");
                     // Normalize the bounding box coordinates
                     float nX1 = boundingBox[0] / imageWidth;
                     float nY1 = boundingBox[1] / imageHeight;
                     float nX2 = boundingBox[2] / imageWidth;
                     float nY2 = boundingBox[3] / imageHeight;
-                    Log.d("BoundingBox CoordsAFTER*****", "exportProjectYOLO: "+ nX1 + " "+ nY1 + " "+ nX2 + " "+ nY2 + " ");
+                    Log.d("BoundingBox CoordsAFTER*****", "exportProjectYOLO: " + nX1 + " " + nY1 + " " + nX2 + " " + nY2 + " ");
 
                     // Normalize the bounding box coordinates
                     float normalizedXCenter = (nX1 + nX2) / 2;
                     float normalizedYCenter = (nY1 + nY2) / 2;
                     float normalizedWidth = nX2 - nX1;
                     float normalizedHeight = nY2 - nY1;
-
-                  /*  // Normalize the bounding box coordinates
-                    float normalizedXCenter = (boundingBox[0] + boundingBox[2]) / (2 * imageWidth);
-                    float normalizedYCenter = (boundingBox[1] + boundingBox[3]) / (2 * imageHeight);
-                    float normalizedWidth = (boundingBox[2] - boundingBox[0]) / imageWidth;
-                    float normalizedHeight = (boundingBox[3] - boundingBox[1]) / imageHeight;*/
-                    Log.d("NORMALIZED COORDS", "exportProjectYOLO: "+ normalizedXCenter + " "+ normalizedYCenter + " "+ normalizedWidth + " "+ normalizedHeight + " ");
+                    Log.d("NORMALIZED COORDS", "exportProjectYOLO: " + normalizedXCenter + " " + normalizedYCenter + " " + normalizedWidth + " " + normalizedHeight + " ");
 
                     // Write YOLO format annotation for the current bounding box
                     String yoloAnnotation = String.format(Locale.US, "%d %.6f %.6f %.6f %.6f\n",
@@ -765,7 +877,6 @@ public class MainActivity2 extends AppCompatActivity {
                             normalizedHeight);
                     zipOutputStream.write(yoloAnnotation.getBytes());
                 }
-
                 // Close the YOLO label file entry
                 zipOutputStream.closeEntry();
 
@@ -790,7 +901,6 @@ public class MainActivity2 extends AppCompatActivity {
         shareIntent.setType("application/zip");
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
-
         // Check if there is any application that can handle the sharing intent
         if (shareIntent.resolveActivity(getPackageManager()) != null) {
             // Start the sharing activity
@@ -801,105 +911,6 @@ public class MainActivity2 extends AppCompatActivity {
         }
 
     }
-    private void exportProjectCOCO() {
-        // Get project details
-        String projectName = dbHelper.getProjectName(projectId);
-        List<String> imagePaths = dbHelper.getImagePathsForProject(projectId);
-        List<String> labelNames = dbHelper.getLabelsForProject(projectId);
-
-        try {
-
-            // Create COCO JSON structure
-            JSONObject cocoJson = new JSONObject();
-
-            // Create 'info' section
-            JSONObject info = new JSONObject();
-            info.put("description", "Your project description");
-            info.put("url", "Your project URL");
-            info.put("version", "1.0");
-            info.put("year", 2024);
-            info.put("date_created", getCurrentDate());
-            cocoJson.put("info", info);
-
-
-            // Create 'categories' section
-            JSONArray categories = new JSONArray();
-            for (int i = 0; i < labelNames.size(); i++) {
-                JSONObject category = new JSONObject();
-                category.put("id", i + 1); // IDs start from 1 in COCO format
-                category.put("name", labelNames.get(i));
-                category.put("supercategory", "object");
-                categories.put(category);
-            }
-            cocoJson.put("categories", categories);
-
-            // Create 'images' section
-            JSONArray images = new JSONArray();
-            for (String imagePath : imagePaths) {
-                JSONObject image = new JSONObject();
-                image.put("id", images.length() + 1); // IDs start from 1 in COCO format
-                image.put("width", getImageWidth(imagePath));
-                image.put("height", getImageHeight(imagePath));
-                image.put("file_name", getFileNameWithoutExtension(imagePath));
-                images.put(image);
-            }
-            cocoJson.put("images", images);
-
-            // Create 'annotations' section
-            JSONArray annotations = new JSONArray();
-            for (String imagePath : imagePaths) {
-                float[] boundingBox = dbHelper.getBoundingBoxForExport(dbHelper.getImageIdFromPath(imagePath));
-                long i_id = dbHelper.getImageIdFromPath(imagePath);
-                String label = dbHelper.getLabelNameForBoundingBox(i_id,boundingBox[0],boundingBox[1],boundingBox[2],boundingBox[3]);
-
-                JSONObject annotation = new JSONObject();
-                annotation.put("id", annotations.length() + 1); // IDs start from 1 in COCO format
-                annotation.put("image_id", getImageId(imagePath, images));
-                annotation.put("category_id", labelNames.indexOf(label) + 1); // IDs start from 1 in COCO format
-                annotation.put("area", calculateArea(boundingBox));
-                annotation.put("bbox", new JSONArray(boundingBox)); // x, y, width, height
-                annotations.put(annotation);
-            }
-            cocoJson.put("annotations", annotations);
-
-            // Save the JSON to a file
-            File exportJsonFile = new File(getExternalFilesDir(null), projectName + "_coco.json");
-            try (FileWriter fileWriter = new FileWriter(exportJsonFile)) {
-                fileWriter.write(cocoJson.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Error exporting project in COCO format", Toast.LENGTH_SHORT).show();
-                });
-                return;
-            }
-
-            // Create a URI for the exported JSON file
-            Uri uri = FileProvider.getUriForFile(this, "com.example.imagelabellingapp.fileprovider", exportJsonFile);
-
-            // Create a sharing intent
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            // Change the intent type to "text/plain"
-            shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-
-            // Check if there is any application that can handle the sharing intent
-            if (shareIntent.resolveActivity(getPackageManager()) != null) {
-                // Start the sharing activity
-                startActivity(Intent.createChooser(shareIntent, "Share via..."));
-            } else {
-                // Display a message that no app can handle the sharing intent
-                Toast.makeText(this, "No app can handle the sharing intent", Toast.LENGTH_SHORT).show();
-            }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-            runOnUiThread(() -> {
-                Toast.makeText(this, "Error exporting project in COCO format: JSON error", Toast.LENGTH_SHORT).show();
-            });
-        }
-    }
-
 
     // Helper method to get image width
     private int getImageWidth(String imagePath) {
