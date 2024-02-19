@@ -8,7 +8,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -81,21 +80,20 @@ public class ExportProjectActivity extends AppCompatActivity {
         ListView listViewImages = findViewById(R.id.viewImages);
 
 // Assuming you have a method getImageFileNamesForProject in your DBHelper
-        List<String> labelFileNames = dbHelper.getImageFileNamesForProject(projectId);
-        List<String> imageFileNames = dbHelper.getImageFileNamesForProject(projectId);
+     //   List<String> labelFileNames = dbHelper.getImageFileNamesForProject(projectId);
+     //   List<String> imageFileNames = dbHelper.getImageFileNamesForProject(projectId);
 
 // Create an ArrayAdapter for labels and images
-        ArrayAdapter<String> labelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labelFileNames);
-        ArrayAdapter<String> imageAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, imageFileNames);
+       // ArrayAdapter<String> labelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, labelFileNames);
+     //   ArrayAdapter<String> imageAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, imageFileNames);
 
 // Set adapters to ListViews
-        listViewLabels.setAdapter(labelAdapter);
-        listViewImages.setAdapter(imageAdapter);
 
-        labelAdapter.notifyDataSetChanged();
-        imageAdapter.notifyDataSetChanged();
 
-        Log.d("ExportProject", "onCreate: labelFilename : " + labelFileNames +"imageFileNames" + imageFileNames);
+      //  labelAdapter.notifyDataSetChanged();
+
+
+      //  Log.d("ExportProject", "onCreate: labelFilename : " + labelFileNames +"imageFileNames" + imageFileNames);
 
 
         // Initialize the Toolbar

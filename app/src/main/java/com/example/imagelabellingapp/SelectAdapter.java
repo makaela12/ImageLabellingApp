@@ -42,4 +42,18 @@ public class SelectAdapter extends ArrayAdapter<String> {
     public String getItem(int position) {
         return mMainTextList.get(position);
     }
+    public void updateData(List<String> mainTextList, List<String> subTextList) {
+        mMainTextList.clear();
+        mMainTextList.addAll(mainTextList);
+        mSubTextList.clear();
+        mSubTextList.addAll(subTextList);
+        notifyDataSetChanged();
+    }
+    public void addAll(List<String> mainTextList, List<String> subTextList) {
+        mMainTextList.addAll(mainTextList);
+        mSubTextList.addAll(subTextList);
+        notifyDataSetChanged();
+    }
+
+
 }

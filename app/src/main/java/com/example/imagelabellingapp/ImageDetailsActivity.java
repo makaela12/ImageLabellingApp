@@ -123,8 +123,6 @@ public class ImageDetailsActivity extends AppCompatActivity {
                                 // Handle touch down event
                                 boundingBox = new float[4];
                                 boundingBox[0] = ((event.getX() * scaleX)/imageWidth) * imageView.getWidth();
-                                //boundingBox[0] = event.getX() * scaleX;
-                                //boundingBox[1] = event.getY() * scaleY;
                                 boundingBox[1] = ((event.getY() * scaleY)/imageHeight) * imageView.getHeight();
                             Log.d("getX1r", "onCreate: "+ boundingBox[0]);
                             Log.d("getY1r", "onCreate: "+ boundingBox[1]);

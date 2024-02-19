@@ -12,7 +12,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -101,7 +100,6 @@ public class selectProject extends AppCompatActivity {
 
         // Set the custom adapter to your ListView
         projectListView.setAdapter(adapter);
-
         // Set item click listener for the ListView
         projectListView.setOnItemClickListener((parent, view, position, id) -> {
             String selectedProjectName = adapter.getItem(position);
@@ -118,6 +116,7 @@ public class selectProject extends AppCompatActivity {
             showDeleteConfirmationDialog(selectedProjectName);
             return true;
         });
+
 
         // used to register the BroadcastReceiver to listen for the "refresh_project_list" broadcast
         registerReceiver(refreshProjectListReceiver, new IntentFilter("refresh_project_list"));
@@ -153,7 +152,7 @@ public class selectProject extends AppCompatActivity {
 
         return projects;
     }
-    // Helper method to retrieve existing project names from the projects table
+    // Helper method to retrieve existing project descriptions from the projects table
     private ArrayList<String> getExistingProjDesc() {
         ArrayList<String> descriptions = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -236,9 +235,10 @@ public class selectProject extends AppCompatActivity {
     private void refreshProjectList() {
         // Retrieve existing project names from the projects table
         ArrayList<String> projectList = getExistingProjects();
+        ArrayList<String> descriptionList = getExistingProjDesc();
         // Update the ArrayAdapter and notify the ListView
         adapter.clear();
-        adapter.addAll(projectList);
+        adapter.updateData(projectList, descriptionList);
         adapter.notifyDataSetChanged();
     }
 
@@ -272,13 +272,14 @@ public class selectProject extends AppCompatActivity {
         }
     }
 
-    // Method to retrieve filtered project names from the projects table
+    // Method to retrieve filtered project names and descriptions from the projects table
     private ArrayList<String> getFilteredProjects(String searchTerm) {
         ArrayList<String> filteredProjects = new ArrayList<>();
+        ArrayList<String> filteredDescriptions = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-        // Query to retrieve project names that contain the search term
-        String query = "SELECT " + DBHelper.COLUMN_PROJECT_NAME + " FROM " + DBHelper.TABLE_PROJECTS +
+        // Query to retrieve project names and descriptions that contain the search term
+        String query = "SELECT " + DBHelper.COLUMN_PROJECT_NAME + ", " + DBHelper.COLUMN_DESCRIPTION + " FROM " + DBHelper.TABLE_PROJECTS +
                 " WHERE " + DBHelper.COLUMN_PROJECT_NAME + " LIKE ?";
 
         Cursor cursor = db.rawQuery(query, new String[]{"%" + searchTerm + "%"});
@@ -287,15 +288,21 @@ public class selectProject extends AppCompatActivity {
             if (cursor.moveToFirst()) {
                 do {
                     String projectName = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_PROJECT_NAME));
+                    String projectDesc = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_DESCRIPTION));
                     filteredProjects.add(projectName);
+                    filteredDescriptions.add(projectDesc);
                 } while (cursor.moveToNext());
             }
         } finally {
             cursor.close();
         }
 
+        // Update the adapter with filtered project names and descriptions
+        adapter.updateData(filteredProjects, filteredDescriptions);
+
         return filteredProjects;
     }
+
     private void showHelpPopup(String message){
         // creates a custom dialog
         Dialog helpDialog = new Dialog(this);
@@ -312,6 +319,7 @@ public class selectProject extends AppCompatActivity {
         // show the popup
         helpDialog.show();
     }
+
 
     private void deleteImageFile(String imagePath) {
         // Create a File object representing the image file
