@@ -108,7 +108,6 @@ public class createProject extends AppCompatActivity {
             public void onClick(View v) {
                 // Getting text from edittext
                 String labelName = inputLabel.getText().toString().trim();
-
                 // Checks if the label name is not empty
                 if (!labelName.isEmpty()) {
                     // Checks if the label name already exists
@@ -127,14 +126,14 @@ public class createProject extends AppCompatActivity {
                         // Clear input after adding
                         inputLabel.setText("");
                     } else {
-                        Snackbar snack3 = Snackbar.make(findViewById(android.R.id.content), "Label name " + labelName + " already exists", Snackbar.LENGTH_LONG);
+                        Snackbar snack3 = Snackbar.make(findViewById(android.R.id.content), "Label name already exists", Snackbar.LENGTH_LONG);
                         View view = snack3.getView();
                         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
                         params.gravity = Gravity.TOP;
                         view.setLayoutParams(params);
                         snack3.show();
                         // Show an error message if the label name already exists
-                        Toast.makeText(createProject.this, "Label name already exists", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(createProject.this, "Label name already exists", Toast.LENGTH_SHORT).show();
                     }
                 }
             }

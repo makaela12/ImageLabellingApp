@@ -255,37 +255,15 @@ class DBHelper extends SQLiteOpenHelper {
             @Override
             public void onTransaction(SQLiteDatabase db) {
                 // Get image IDs associated with the label in the bboxes table
-                List<Long> imageIds = getImageIdsForLabelInBboxes(db, projectId, label);
+                //List<Long> bboxIds = getbboxIdsForLabelInBboxes(db, projectId, label);
                 // Delete label
                 db.delete(TABLE_LABELS, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
                         new String[]{String.valueOf(projectId), label});
                 // Delete label and associated images in the bboxes table
                 db.delete(TABLE_BBOXES, COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?",
                         new String[]{String.valueOf(projectId), label});
-                // Delete associated images in the images table
-                for (Long imageId : imageIds) {
-                    db.delete(TABLE_IMAGES, COLUMN_IMAGE_ID + " = ?",
-                            new String[]{String.valueOf(imageId)});
-                }
             }
         });
-    }
-
-    // Helper method to get image IDs associated with a label in the bboxes table
-    private List<Long> getImageIdsForLabelInBboxes(SQLiteDatabase db, long projectId, String label) {
-        List<Long> imageIds = new ArrayList<>();
-        String query = "SELECT DISTINCT " + COLUMN_IMAGE_ID + " FROM " + TABLE_BBOXES +
-                " WHERE " + COLUMN_PROJECT_ID + " = ? AND " + COLUMN_LABEL_NAME + " = ?";
-        String[] selectionArgs = {String.valueOf(projectId), label};
-        Cursor cursor = db.rawQuery(query, selectionArgs);
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                long imageId = cursor.getLong(cursor.getColumnIndex(COLUMN_IMAGE_ID));
-                imageIds.add(imageId);
-            }
-            cursor.close();
-        }
-        return imageIds;
     }
 
     private void performTransaction(TransactionCallback callback) {

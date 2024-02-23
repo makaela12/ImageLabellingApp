@@ -130,22 +130,39 @@ public class EditProjectActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // getting text from edittext
                 String labelName = inputLabel.getText().toString().trim();
-
                 // checks to see if item is not empty
                 if (!labelName.isEmpty()) {
-                    // adds item to list
-                    labelArr.add(labelName);
-                    // Notifies adapter that data in list is updated, updates list view
-                    adapter.add(labelName);
-                    // Clear input after adding
-                    inputLabel.setText("");
-
-                    Snackbar snack = Snackbar.make(findViewById(android.R.id.content), labelName + " was added", Snackbar.LENGTH_LONG);
-                    View view = snack.getView();
-                    FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
-                    params.gravity = Gravity.TOP;
-                    view.setLayoutParams(params);
-                    snack.show();
+                    // Checks if the label name already exists
+                    boolean labelExists = false;
+                    for (String existingLabel : labelArr) {
+                        if (existingLabel.equalsIgnoreCase(labelName)) {
+                            labelExists = true;
+                            break;
+                        }
+                    }
+                    if (!labelExists) {
+                        // adds item to list
+                        labelArr.add(labelName);
+                        // Notifies adapter that data in list is updated, updates list view
+                        adapter.add(labelName);
+                        // Clear input after adding
+                        inputLabel.setText("");
+                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), labelName + " was added", Snackbar.LENGTH_LONG);
+                        View view = snack.getView();
+                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+                        params.gravity = Gravity.TOP;
+                        view.setLayoutParams(params);
+                        snack.show();
+                    } else {
+                        Snackbar snack3 = Snackbar.make(findViewById(android.R.id.content), "Label name already exists", Snackbar.LENGTH_LONG);
+                        View view = snack3.getView();
+                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) view.getLayoutParams();
+                        params.gravity = Gravity.TOP;
+                        view.setLayoutParams(params);
+                        snack3.show();
+                        // Show an error message if the label name already exists
+                       // Toast.makeText(EditProjectActivity.this, "Label name already exists", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
@@ -354,8 +371,8 @@ public class EditProjectActivity extends AppCompatActivity {
     // Helper method to show a warning dialog if label is associated with images
     private void showDeleteLabelWithImagesDialog(final String label, final int position, int imageCount) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Warning: Label associated with images");
-        builder.setMessage("This label is associated with " + imageCount + " image(s). Deleting it will result in the loss of these images.");
+        builder.setTitle("Warning: Label associated with Bounding Boxes");
+        builder.setMessage("This label is associated with " + imageCount + " bounding box(es). Deleting it will result in the loss of these bounding boxes.");
 
         builder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
             @Override
@@ -391,19 +408,30 @@ public class EditProjectActivity extends AppCompatActivity {
         input.setText(label);
         builder.setView(input);
 
-        // Set up the buttons
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 editedLabel = input.getText().toString().trim();
                 if (!editedLabel.isEmpty()) {
-                    dbHelper.updateLabel(projectId, label, editedLabel);
-                    dbHelper.updateBoundingBoxLabel(projectId,label,editedLabel);
-                    // Reload project details after updating the label
-                    loadProjectDetails(projectId);
-                    // Notify MainActivity2 about the label change
-                    adapter.notifyDataSetChanged();
-                    //dialog.dismiss();
+                    // Check if the edited label already exists in the list
+                    boolean labelExists = false;
+                    for (String existingLabel : labelArr) {
+                        if (existingLabel.equalsIgnoreCase(editedLabel)) {
+                            labelExists = true;
+                            break;
+                        }
+                    }
+                    if (!labelExists) {
+                        dbHelper.updateLabel(projectId, label, editedLabel);
+                        dbHelper.updateBoundingBoxLabel(projectId, label, editedLabel);
+                        // Reload project details after updating the label
+                        loadProjectDetails(projectId);
+                        // Notify MainActivity2 about the label change
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        // Show an error message if the edited label already exists
+                        Toast.makeText(EditProjectActivity.this, "Label name already exists", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     // Show an error message if the edited label is empty
                     Toast.makeText(EditProjectActivity.this, "Label cannot be empty", Toast.LENGTH_SHORT).show();
